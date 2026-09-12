@@ -1,0 +1,302 @@
+<!doctype html>
+<html lang="pt-PT">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#07111f"><link rel="manifest" href="manifest.json"><link rel="apple-touch-icon" href="icon.svg">
+<title>Football Highlights Maduro Studio</title>
+<style>
+:root{--bg:#07111f;--panel:#101c2e;--panel2:#0b1626;--line:#253750;--text:#f7f9fc;--muted:#9eacc0;--green:#43e58a;--red:#f05252}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 80% 0,#183052 0,#07111f 42%);color:var(--text);font:15px system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}header{position:sticky;top:0;z-index:20;background:#07111feF;backdrop-filter:blur(14px);border-bottom:1px solid var(--line);padding:14px 18px}header h1{margin:0;font-size:20px}header small{color:var(--muted)}main{max-width:1280px;margin:auto;padding:15px}.tabs{display:flex;gap:7px;overflow:auto;margin-bottom:14px}.tabs button{white-space:nowrap}.tab.active{background:var(--green);color:#04110a}button{border:0;border-radius:10px;background:#1c2c43;color:#fff;padding:10px 13px;font-weight:750;cursor:pointer}button:disabled{opacity:.45;cursor:not-allowed}.primary{background:var(--green);color:#04110a}.danger{background:var(--red)}.card{background:#101c2eeF;border:1px solid var(--line);border-radius:17px;padding:15px;margin-bottom:14px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.two{display:grid;grid-template-columns:1.25fr .75fr;gap:14px}label{display:block;color:var(--muted);font-size:12px;margin:9px 0 4px}input,select{width:100%;background:#081423;border:1px solid var(--line);color:#fff;border-radius:9px;padding:10px}input[type=color]{height:42px;padding:3px}.row{display:flex;gap:7px;flex-wrap:wrap}.muted{color:var(--muted);line-height:1.45}.videoBox{background:#000;border-radius:13px;overflow:hidden;position:relative}.videoBox video{display:block;width:100%;max-height:560px}.boardPreview{aspect-ratio:16/9;background:#000;position:relative;display:grid;place-items:center;border-radius:13px;overflow:hidden}.board{position:absolute;top:4%;left:50%;transform:translateX(-50%);padding:8px 15px;border-radius:8px;white-space:nowrap;font-weight:850;font-size:clamp(11px,1.8vw,18px)}.centerScore{font-size:clamp(38px,7vw,74px);font-weight:950}.events{display:grid;gap:7px;max-height:360px;overflow:auto}.event{background:#0a1525;border:1px solid var(--line);border-radius:9px;padding:9px;display:flex;justify-content:space-between;align-items:center;gap:8px}.tag{font-size:11px;background:#1c3450;border-radius:999px;padding:3px 7px}.stat{background:#0a1525;border-radius:9px;padding:10px;color:#c6d2e2}.progress{height:9px;background:#08111d;border-radius:99px;overflow:hidden;margin-top:9px}.bar{height:100%;width:0;background:var(--green);transition:width .1s}.log{background:#050b13;border-radius:10px;padding:9px;max-height:170px;overflow:auto;font:12px ui-monospace,monospace;white-space:pre-wrap}.hidden{display:none}.small{font-size:12px}.fileItem{padding:9px;background:#0a1525;border:1px solid var(--line);border-radius:9px;margin-top:6px;cursor:pointer}.fileItem.sel{outline:2px solid var(--green)}.note{border-left:3px solid var(--green);padding-left:10px}.warning{border-left:3px solid #f0b94d;padding-left:10px}@media(max-width:780px){.grid,.two{grid-template-columns:1fr}main{padding:9px}.card{padding:12px}.board{font-size:10px}}
+.logoMini{width:28px;height:28px;object-fit:contain;border-radius:50%;vertical-align:middle}@media(max-width:780px){button{padding:10px 11px}.videoBox video{max-height:70vh}}
+</style>
+</head>
+<body>
+<header><h1>⚽ Football Highlights Maduro Studio</h1><small>Highlights profissionais — PC · iPhone · Android</small></header>
+<main>
+<div class="tabs">
+<button class="tab active" data-tab="game">1 · Jogo</button><button class="tab" data-tab="media">2 · Vídeos</button><button class="tab" data-tab="marks">3 · Momentos</button><button class="tab" data-tab="style">4 · Scoreboard</button><button class="tab" data-tab="render">5 · Gerar</button>
+</div>
+
+<section id="game">
+<div class="grid">
+<div class="card"><b>Dados do jogo</b>
+<label>Minha equipa</label><input id="home" value="Maduro FC">
+<label>Adversário</label><input id="away" value="Adversário">
+<div class="grid">
+<div><label>Emblema da minha equipa</label><input id="homeLogo" type="file" accept="image/*"></div>
+<div><label>Emblema do adversário</label><input id="awayLogo" type="file" accept="image/*"></div>
+</div>
+<label>Competição</label><input id="competition" placeholder="Ex.: Campeonato Sub-11">
+<label>Data</label><input id="date" type="date">
+<label>Formato do jogo</label><select id="matchType"><option>2 × 20 min</option><option>2 × 25 min</option><option>2 × 30 min</option><option>2 × 35 min</option><option>2 × 40 min</option><option>2 × 45 min</option></select>
+</div>
+<div class="card"><b>Resultado</b><div class="stat" style="margin-top:10px;text-align:center;font-size:30px;font-weight:900"><span id="scoreHome">0</span> — <span id="scoreAway">0</span></div><p class="muted">O resultado é calculado a partir dos golos que marcares na timeline.</p></div>
+</div>
+</section>
+
+<section id="media" class="hidden">
+<div class="card"><b>Vídeos do jogo</b><p class="muted">Seleciona vídeos da Fototeca/Galeria no telemóvel ou ficheiros do PC. O processamento é feito localmente no navegador.</p>
+<input id="files" type="file" accept="video/*" multiple>
+<div id="fileList"></div>
+<div class="videoBox" style="margin-top:10px"><video id="player" controls playsinline preload="metadata"></video></div>
+<div class="row" style="margin-top:8px"><button id="prev">◀ Anterior</button><button id="next">Seguinte ▶</button></div>
+</div>
+</section>
+
+<section id="marks" class="hidden">
+<div class="two">
+<div class="card"><b>Marcar o momento atual</b><p class="muted">Marca o lance no instante exato. Nos golos podes indicar marcador e assistência.</p>
+<div class="row">
+<button class="primary mark" data-kind="Golo nosso">⚽ Golo nosso</button><button class="danger mark" data-kind="Golo adversário">⚽ Golo adversário</button>
+<button class="mark" data-kind="Defesa">🧤 Defesa</button><button class="mark" data-kind="Oportunidade">⭐ Oportunidade</button><button class="mark" data-kind="Destaque">🔥 Destaque</button>
+</div>
+<div class="grid" style="margin-top:10px">
+<div><label>Marcador (opcional)</label><input id="scorer" placeholder="Nome do jogador"></div>
+<div><label>Assistência (opcional)</label><input id="assist" placeholder="Nome do jogador"></div>
+</div>
+<p class="muted small">Os nomes ficam associados ao próximo golo que marcares.</p></div>
+<div class="card"><b>Timeline</b><div id="eventsList" class="events"></div></div>
+</div>
+</section>
+
+<section id="style" class="hidden">
+<div class="grid">
+<div class="card"><b>Scoreboard profissional</b>
+<label>Modelo</label><select id="template">
+<option value="classic">Clássico</option><option value="compact">Compacto</option><option value="broadcast">TV / Broadcast</option>
+</select>
+<label>Posição</label><select id="position"><option value="top">Topo</option><option value="bottom">Fundo</option></select>
+<label>Cor do painel</label><input id="panelColor" type="color" value="#111827">
+<label>Cor do texto</label><input id="textColor" type="color" value="#ffffff">
+<label>Transparência</label><input id="opacity" type="range" min=".35" max="1" step=".05" value=".92">
+<label>Tamanho</label><input id="fontSize" type="range" min="10" max="30" value="18">
+<label>Mostrar competição</label><select id="showComp"><option value="yes">Sim</option><option value="no">Não</option></select>
+<label>Mostrar emblemas</label><select id="showLogos"><option value="yes">Sim</option><option value="no">Não</option></select>
+<label>Animação do marcador</label><select id="goalAnim"><option value="yes">Sim</option><option value="no">Não</option></select>
+</div>
+<div class="card"><b>Pré-visualização</b><div class="boardPreview"><div id="board" class="board"></div><div class="centerScore"><span id="pv1">0</span> — <span id="pv2">0</span></div></div><p class="muted small">Os emblemas e animações aparecem no vídeo final quando suportados pelo navegador.</p></div>
+</div>
+</section>
+
+<section id="render" class="hidden">
+<div class="grid">
+<div class="card"><b>Gerar highlights</b>
+<label>Segundos antes do momento</label><input id="pre" type="number" min="0" max="30" value="8">
+<label>Segundos depois do momento</label><input id="post" type="number" min="0" max="30" value="5">
+<label>Intro (segundos)</label><input id="intro" type="number" min="0" max="8" value="2">
+<label>Outro (segundos)</label><input id="outro" type="number" min="0" max="8" value="2">
+<label>Formato final</label><select id="ratio"><option value="16:9">16:9 — YouTube / TV</option><option value="9:16">9:16 — Reels / Shorts</option><option value="1:1">1:1 — Instagram</option></select>
+<label>Qualidade</label><select id="quality"><option value="high">Alta</option><option value="medium">Média</option><option value="low">Baixa</option></select>
+<div class="note muted" style="margin-top:12px">Inclui abertura com o jogo, clips marcados, scoreboard, golos e encerramento. O processamento é local no dispositivo.</div>
+<button class="primary" id="renderBtn" style="margin-top:12px">🎬 GERAR VÍDEO FINAL</button>
+<div id="mp4Box" class="note" style="margin-top:12px">
+<b>📦 Exportar MP4</b>
+<p class="muted small">Depois de gerar o WebM, podes converter para MP4 diretamente no navegador. A conversão usa FFmpeg no próprio dispositivo e pode demorar alguns minutos em vídeos longos.</p>
+<button id="mp4Btn" disabled>🔄 Converter WebM → MP4</button>
+<div id="mp4Status" class="muted small" style="margin-top:7px"></div>
+</div>
+<div class="progress"><div id="bar" class="bar"></div></div><div id="status" class="stat" style="margin-top:8px">Pronto.</div>
+</div>
+<div class="card"><b>Log</b><div id="log" class="log">Aguardando.</div><div id="downloadArea"></div></div>
+</div>
+</section>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.10/dist/umd/ffmpeg.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@ffmpeg/util@0.12.1/dist/umd/index.js"></script>
+<script>
+const $=id=>document.getElementById(id);
+let videos=[], current=0, marks=[], score=[0,0], rendering=false;
+let logos={home:null,away:null};
+const tabs=[...document.querySelectorAll('.tab')], sections=['game','media','marks','style','render'];
+tabs.forEach(t=>t.onclick=()=>{tabs.forEach(x=>x.classList.remove('active'));t.classList.add('active');sections.forEach(s=>$(s).classList.toggle('hidden',s!==t.dataset.tab));refresh()});
+
+function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function fmt(t){let m=Math.floor(t/60),s=Math.floor(t%60);return `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`}
+function log(x){$('log').textContent+=($('log').textContent==='Aguardando.'?'':'\n')+x;$('log').scrollTop=$('log').scrollHeight}
+function boardText(){let a=`${$('home').value||'Minha Equipa'}   ${score[0]} — ${score[1]}   ${$('away').value||'Adversário'}`;if($('showComp').value==='yes'&&$('competition').value)a+=`   •   ${$('competition').value}`;return a}
+function hexToRgba(hex,a){let h=hex.replace('#','');if(h.length===3)h=h.split('').map(x=>x+x).join('');return `rgba(${parseInt(h.slice(0,2),16)},${parseInt(h.slice(2,4),16)},${parseInt(h.slice(4,6),16)},${a})`}
+function templateText(){
+ const t=$('template').value;
+ if(t==='compact') return `${score[0]} — ${score[1]}`;
+ if(t==='broadcast') return `${$('home').value||'Minha Equipa'}   ${score[0]}  —  ${score[1]}   ${$('away').value||'Adversário'}`;
+ return boardText();
+}
+function readLogo(input,key){
+ const f=input.files?.[0]; if(!f)return;
+ const r=new FileReader();r.onload=()=>{logos[key]=r.result;refresh()};r.readAsDataURL(f);
+}
+
+
+let lastWebmBlob=null,lastMp4Url=null;
+async function convertToMP4(){
+ if(!lastWebmBlob)return alert('Gera primeiro o vídeo final.');
+ const btn=$('mp4Btn');btn.disabled=true;$('mp4Status').textContent='A carregar o motor MP4… (primeira vez pode demorar)';
+ try{
+   const {FFmpeg}=window.FFmpegWASM||window.FFmpeg||{};
+   const {fetchFile,toBlobURL}=window.FFmpegUtil||{};
+   if(!FFmpeg||!fetchFile||!toBlobURL) throw new Error('Motor FFmpeg indisponível neste navegador.');
+   const ff=new FFmpeg();
+   ff.on('progress',({progress})=>{$('mp4Status').textContent=`A converter para MP4… ${Math.round(progress*100)}%`});
+   const coreURL=await toBlobURL('https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/umd/ffmpeg-core.js','text/javascript');
+   const wasmURL=await toBlobURL('https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/umd/ffmpeg-core.wasm','application/wasm');
+   await ff.load({coreURL,wasmURL});
+   await ff.writeFile('input.webm',await fetchFile(lastWebmBlob));
+   await ff.exec(['-i','input.webm','-c:v','libx264','-preset','veryfast','-crf','20','-c:a','aac','-b:a','160k','-movflags','+faststart','output.mp4']);
+   const data=await ff.readFile('output.mp4');
+   const blob=new Blob([data.buffer],{type:'video/mp4'});
+   if(lastMp4Url)URL.revokeObjectURL(lastMp4Url);
+   lastMp4Url=URL.createObjectURL(blob);
+   const a=document.createElement('a');a.href=lastMp4Url;a.download=`Football_Highlights_Maduro_${new Date().toISOString().slice(0,10)}.mp4`;
+   a.textContent='⬇️ Guardar MP4';a.className='primary';a.style.display='inline-block';a.style.marginTop='8px';a.style.padding='11px 14px';a.style.borderRadius='10px';a.style.color='#04110a';a.style.fontWeight='800';
+   $('mp4Box').appendChild(a);
+   $('mp4Status').textContent=`MP4 concluído — ${Math.round(blob.size/1024/1024*10)/10} MB`;
+ }catch(e){
+   $('mp4Status').textContent='Não foi possível converter: '+e.message;
+ }finally{btn.disabled=false}
+}
+function refresh(){
+$('scoreHome').textContent=$('pv1').textContent=score[0];$('scoreAway').textContent=$('pv2').textContent=score[1];
+$('board').textContent=templateText();
+$('board').style.background=hexToRgba($('panelColor').value,+$('opacity').value);
+$('board').style.color=$('textColor').value;
+$('board').style.fontSize=$('fontSize').value+'px';
+$('board').style.top=$('position').value==='top'?'4%':'auto';
+$('board').style.bottom=$('position').value==='bottom'?'4%':'auto';
+$('board').style.borderRadius=$('template').value==='broadcast'?'3px':'8px';
+$('board').style.letterSpacing=$('template').value==='broadcast'?'.02em':'normal';
+renderEvents();
+}
+['home','away','competition','panelColor','textColor','opacity','fontSize','position','showComp','template','showLogos','goalAnim'].forEach(id=>$(id).addEventListener('input',refresh));
+$('homeLogo').onchange=()=>readLogo($('homeLogo'),'home');$('awayLogo').onchange=()=>readLogo($('awayLogo'),'away');
+$('date').value=new Date().toISOString().slice(0,10);
+
+$('files').onchange=e=>{videos.forEach(v=>URL.revokeObjectURL(v.url));videos=[...e.target.files].map(f=>({file:f,url:URL.createObjectURL(f),name:f.name}));current=0;loadVideo()};
+function loadVideo(){if(!videos.length){$('player').removeAttribute('src');return}$('player').src=videos[current].url;renderFileList()}
+function renderFileList(){$('fileList').innerHTML=videos.map((v,i)=>`<div class="fileItem ${i===current?'sel':''}" data-i="${i}">🎥 ${i+1}. ${esc(v.name)}</div>`).join('');document.querySelectorAll('.fileItem').forEach(x=>x.onclick=()=>{current=+x.dataset.i;loadVideo()})}
+$('prev').onclick=()=>{if(videos.length){current=(current-1+videos.length)%videos.length;loadVideo()}};$('next').onclick=()=>{if(videos.length){current=(current+1)%videos.length;loadVideo()}};
+
+document.querySelectorAll('.mark').forEach(b=>b.onclick=()=>{
+ if(!videos.length)return alert('Carrega primeiro um vídeo.');
+ const kind=b.dataset.kind,t=+$('player').currentTime.toFixed(2);
+ const scorer=(kind.startsWith('Golo'))?$('scorer').value.trim():'';
+ const assist=(kind.startsWith('Golo'))?$('assist').value.trim():'';
+ marks.push({kind,time:t,video:current,scorer,assist});
+ if(kind==='Golo nosso')score[0]++;if(kind==='Golo adversário')score[1]++;
+ if(kind.startsWith('Golo')){$('scorer').value='';$('assist').value='';}
+ marks.sort((a,b)=>a.video-b.video||a.time-b.time);refresh();
+});
+function renderEvents(){let e=$('eventsList');if(!marks.length){e.innerHTML='<span class="muted">Nenhum momento marcado.</span>';return}
+e.innerHTML=marks.map((x,i)=>`<div class="event"><span><span class="tag">${esc(x.kind)}</span> ${fmt(x.time)} · vídeo ${x.video+1}${x.scorer?` · ${esc(x.scorer)}`:''}${x.assist?` (assist. ${esc(x.assist)})`:''}</span><button onclick="removeMark(${i})">×</button></div>`).join('')}
+function removeMark(i){let x=marks[i];if(x.kind==='Golo nosso')score[0]--;if(x.kind==='Golo adversário')score[1]--;marks.splice(i,1);refresh()}
+
+function getSegments(){
+ const pre=+$('pre').value,post=+$('post').value;
+ return marks.map((m,i)=>({i,video:m.video,start:Math.max(0,m.time-pre),end:m.time+post,kind:m.kind,time:m.time})).filter(x=>videos[x.video]).sort((a,b)=>a.video-b.video||a.start-b.start);
+}
+function waitEvent(el,event){return new Promise((resolve,reject)=>{const ok=()=>{cleanup();resolve()};const bad=()=>{cleanup();reject(new Error('Falha no vídeo.'))};const cleanup=()=>{el.removeEventListener(event,ok);el.removeEventListener('error',bad)};el.addEventListener(event,ok,{once:true});el.addEventListener('error',bad,{once:true})})}
+function seek(video,t){return new Promise((resolve,reject)=>{const ok=()=>{cleanup();resolve()};const bad=()=>{cleanup();reject(new Error('Não foi possível procurar no vídeo.'))};const cleanup=()=>{video.removeEventListener('seeked',ok);video.removeEventListener('error',bad)};video.addEventListener('seeked',ok,{once:true});video.addEventListener('error',bad,{once:true});video.currentTime=Math.max(0,Math.min(t,video.duration||t))})}
+function canvasSize(ratio,quality){let base=quality==='high'?1280:quality==='medium'?960:640;if(ratio==='16:9')return [base,Math.round(base*9/16)];if(ratio==='9:16')return [Math.round(base*9/16),base];return [base,base]}
+function loadImg(data){return new Promise(res=>{if(!data)return res(null);const im=new Image();im.onload=()=>res(im);im.onerror=()=>res(null);im.src=data})}
+async function drawFrame(ctx,canvas,v,seg,baseTime){
+ ctx.fillStyle='#000';ctx.fillRect(0,0,canvas.width,canvas.height);
+ const vw=v.videoWidth,vh=v.videoHeight;let scale=Math.min(canvas.width/vw,canvas.height/vh);let w=vw*scale,h=vh*scale;ctx.drawImage(v,(canvas.width-w)/2,(canvas.height-h)/2,w,h);
+ const ratio=canvas.width/1280;let fs=+$('fontSize').value*ratio;const temp=$('template').value;
+ const text=temp==='compact'?`${score[0]} — ${score[1]}`:templateText();
+ ctx.font=`800 ${fs}px system-ui,sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';
+ const pad=12*ratio,tw=ctx.measureText(text).width+pad*2,bh=fs+pad*1.8;let y=$('position').value==='top'?canvas.height*.045+bh/2:canvas.height*.955-bh/2;
+ ctx.globalAlpha=+$('opacity').value;ctx.fillStyle=$('panelColor').value;
+ roundRect(ctx,canvas.width/2-tw/2,y-bh/2,tw,bh,temp==='broadcast'?3:8);ctx.fill();ctx.globalAlpha=1;
+ ctx.fillStyle=$('textColor').value;ctx.fillText(text,canvas.width/2,y);
+ if($('showLogos').value==='yes'){
+   const lh=bh*.7; const li=await loadImg(logos.home), ai=await loadImg(logos.away);
+   if(li)ctx.drawImage(li,canvas.width/2-tw/2+5*ratio,y-lh/2,lh,lh);
+   if(ai)ctx.drawImage(ai,canvas.width/2+tw/2-lh-5*ratio,y-lh/2,lh,lh);
+ }
+ if(seg && seg.kind.startsWith('Golo') && $('goalAnim').value==='yes'){
+   const elapsed=Math.max(0,(v.currentTime-seg.time)+(+$('pre').value));
+   if(elapsed<1.5){
+     const p=1-Math.min(1,elapsed/1.5), alpha=Math.max(0,p);
+     ctx.save();ctx.globalAlpha=alpha;ctx.textAlign='center';ctx.font=`950 ${Math.round(72*ratio+35*p)}px system-ui,sans-serif`;
+     ctx.fillStyle='#fff';ctx.shadowColor='#000';ctx.shadowBlur=18*ratio;
+     ctx.fillText('⚽ GOLO!',canvas.width/2,canvas.height*.28);
+     if(seg.scorer){ctx.font=`800 ${Math.round(26*ratio)}px system-ui,sans-serif`;ctx.fillText(seg.scorer,canvas.width/2,canvas.height*.36)}
+     ctx.restore();
+   }
+ }
+}
+function roundRect(ctx,x,y,w,h,r){ctx.beginPath();ctx.roundRect(x,y,w,h,r)}
+
+async function renderTitle(ctx,canvas,seconds,title,subtitle){
+ if(seconds<=0)return;
+ const fps=30,frames=Math.round(seconds*fps);
+ for(let i=0;i<frames;i++){
+   ctx.fillStyle='#07111f';ctx.fillRect(0,0,canvas.width,canvas.height);
+   const p=Math.min(1,Math.min(i/15,(frames-i)/15));ctx.globalAlpha=Math.max(.15,p);
+   ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle='#fff';
+   ctx.font=`950 ${Math.round(Math.min(canvas.width,canvas.height)*.075)}px system-ui,sans-serif`;
+   ctx.fillText(title,canvas.width/2,canvas.height*.43);
+   ctx.font=`700 ${Math.round(Math.min(canvas.width,canvas.height)*.032)}px system-ui,sans-serif`;
+   ctx.fillText(subtitle,canvas.width/2,canvas.height*.55);
+   ctx.globalAlpha=1;await new Promise(r=>setTimeout(r,1000/fps));
+ }
+}
+async function renderFinal(){
+ if(rendering)return;if(!videos.length)return alert('Carrega pelo menos um vídeo.');if(!marks.length)return alert('Marca pelo menos um momento.');
+ rendering=true;$('renderBtn').disabled=true;$('downloadArea').innerHTML='';$('log').textContent='A iniciar...';$('bar').style.width='0%';
+ const segs=getSegments();const [W,H]=canvasSize($('ratio').value,$('quality').value);
+ const canvas=document.createElement('canvas');canvas.width=W;canvas.height=H;const ctx=canvas.getContext('2d');
+ const mime=MediaRecorder.isTypeSupported('video/webm;codecs=vp9,opus')?'video/webm;codecs=vp9,opus':MediaRecorder.isTypeSupported('video/webm;codecs=vp8,opus')?'video/webm;codecs=vp8,opus':'video/webm';
+ const stream=canvas.captureStream(30);const recorder=new MediaRecorder(stream,{mimeType:mime,videoBitsPerSecond:$('quality').value==='high'?6000000:$('quality').value==='medium'?4000000:2500000});
+ const chunks=[];recorder.ondataavailable=e=>{if(e.data.size)chunks.push(e.data)};const stopped=new Promise(r=>recorder.onstop=r);recorder.start(250);
+ const rv=document.createElement('video');rv.playsInline=true;rv.muted=true;
+ try{
+  await renderTitle(ctx,canvas,+$('intro').value,`${$('home').value||'Minha Equipa'}  ${score[0]} — ${score[1]}  ${$('away').value||'Adversário'}`,$('competition').value||'Football Highlights');
+  for(let i=0;i<segs.length;i++){
+   const s=segs[i];$('status').textContent=`A renderizar ${i+1}/${segs.length}: ${s.kind}`;$('bar').style.width=(i/segs.length*100)+'%';log(`Clip ${i+1}: vídeo ${s.video+1}, ${fmt(s.start)} → ${fmt(s.end)}`);
+   rv.src=videos[s.video].url;await waitEvent(rv,'loadedmetadata');await seek(rv,s.start);
+   await new Promise(async resolve=>{
+    let done=false;
+    const finish=()=>{if(done)return;done=true;rv.pause();resolve()};
+    rv.ontimeupdate=()=>{drawFrame(ctx,canvas,rv,s,s.time);if(rv.currentTime>=Math.min(s.end,rv.duration||s.end)-.03)finish()};
+    rv.onended=finish;await rv.play();
+    const check=()=>{if(done)return;if(rv.currentTime>=Math.min(s.end,rv.duration||s.end)-.03)finish();else requestAnimationFrame(check)};check();
+   });
+  }
+  await renderTitle(ctx,canvas,+$('outro').value,'FIM DOS HIGHLIGHTS',`${$('home').value||'Minha Equipa'} ${score[0]} — ${score[1]} ${$('away').value||'Adversário'}`);
+  $('bar').style.width='100%';$('status').textContent='A finalizar ficheiro...';recorder.stop();await stopped;
+  const blob=new Blob(chunks,{type:'video/webm'});lastWebmBlob=blob;$('mp4Btn').disabled=false;const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;a.download=`Football_Highlights_Maduro_${new Date().toISOString().slice(0,10)}.webm`;a.textContent='⬇️ Guardar vídeo final (WebM)';a.className='primary';a.style.display='inline-block';a.style.marginTop='10px';a.style.padding='11px 14px';a.style.borderRadius='10px';a.style.color='#04110a';a.style.fontWeight='800';$('downloadArea').appendChild(a);
+  $('status').textContent=`Concluído — ${Math.round(blob.size/1024/1024*10)/10} MB.`;
+  log('Render concluído. O ficheiro está pronto para guardar.');
+  log('Nota: a versão Web está a exportar WebM. Para MP4 universal, é preciso uma etapa FFmpeg/servidor.');
+ }catch(e){try{recorder.stop()}catch(_){}$('status').textContent='Erro: '+e.message;log('ERRO: '+e.message);alert('Não foi possível concluir o render: '+e.message)}
+ rendering=false;$('renderBtn').disabled=false;
+}
+$('renderBtn').onclick=renderFinal;$('mp4Btn').onclick=convertToMP4;
+
+function projectData(){
+ return {
+  home:$('home').value,away:$('away').value,competition:$('competition').value,date:$('date').value,matchType:$('matchType').value,
+  score,marks,style:{template:$('template').value,position:$('position').value,panelColor:$('panelColor').value,textColor:$('textColor').value,opacity:$('opacity').value,fontSize:$('fontSize').value,showComp:$('showComp').value,showLogos:$('showLogos').value,goalAnim:$('goalAnim').value},
+  render:{pre:$('pre').value,post:$('post').value,intro:$('intro').value,outro:$('outro').value,ratio:$('ratio').value,quality:$('quality').value},logos
+ };
+}
+$('saveProject').onclick=()=>{localStorage.setItem('fhms-project',JSON.stringify(projectData()));$('status').textContent='Projeto guardado neste dispositivo.';alert('Projeto guardado neste navegador.')};
+$('loadProject').onclick=()=>{
+ const raw=localStorage.getItem('fhms-project');if(!raw)return alert('Não existe projeto guardado.');
+ try{const p=JSON.parse(raw);['home','away','competition','date','matchType'].forEach(k=>{if(p[k]!=null)$(k).value=p[k]});
+  score=p.score||[0,0];marks=p.marks||[];logos=p.logos||{home:null,away:null};
+  const s=p.style||{};Object.keys(s).forEach(k=>{if($(k))$(k).value=s[k]});
+  const r=p.render||{};Object.keys(r).forEach(k=>{if($(k))$(k).value=r[k]});
+  refresh();alert('Projeto recuperado. Seleciona novamente os vídeos da Fototeca/Galeria.');
+ }catch(e){alert('Projeto inválido.')}
+};
+$('resetProject').onclick=()=>{if(confirm('Criar um novo jogo? Os vídeos escolhidos e momentos atuais serão limpos.')){marks=[];score=[0,0];videos=[];current=0;logos={home:null,away:null};$('player').removeAttribute('src');refresh()}};
+
+refresh();
+</script>
+<script>
+if ('serviceWorker' in navigator) window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js'));
+</script></body></html>
