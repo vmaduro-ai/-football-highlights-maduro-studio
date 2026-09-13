@@ -49,7 +49,7 @@
 </div>
 <label>Competição</label><input id="competition" placeholder="Ex.: Campeonato Sub-11">
 <label>Data</label><input id="date" type="date">
-<label>Formato do jogo</label><select id="matchType"><option>2 × 20 min</option><option>2 × 25 min</option><option>2 × 30 min</option><option>2 × 35 min</option><option>2 × 40 min</option><option>2 × 45 min</option></select>
+<label>Períodos do jogo</label><select id="matchType"><option selected>4 × 15 min</option><option>4 × 10 min</option><option>4 × 12 min</option><option>4 × 20 min</option><option>4 × 25 min</option><option>2 × 20 min</option><option>2 × 25 min</option><option>2 × 30 min</option><option>2 × 35 min</option><option>2 × 40 min</option><option>2 × 45 min</option></select>
 </div>
 <div class="card"><b>Resultado</b><div class="stat" style="margin-top:10px;text-align:center;font-size:30px;font-weight:900"><span id="scoreHome">0</span> — <span id="scoreAway">0</span></div><p class="muted">O resultado é calculado a partir dos golos que marcares na timeline.</p></div>
 </div>
@@ -150,18 +150,17 @@
 <div class="grid">
 <div class="card"><b>Gerar highlights</b>
 <label>Segundos antes do momento</label><input id="pre" type="number" min="0" max="30" value="8">
-<label>Segundos depois do momento</label><input id="post" type="number" min="0" max="30" value="5">
+<label>Segundos depois do momento</label><input id="post" type="number" min="0" max="30" value="8">
 <label>Intro (segundos)</label><input id="intro" type="number" min="0" max="8" value="2">
 <label>Outro (segundos)</label><input id="outro" type="number" min="0" max="8" value="2">
 <label>Formato final</label><select id="ratio"><option value="16:9">16:9 — YouTube / TV</option><option value="9:16">9:16 — Reels / Shorts</option><option value="1:1">1:1 — Instagram</option></select>
 <label>Qualidade</label><select id="quality"><option value="high">Alta</option><option value="medium">Média</option><option value="low">Baixa</option></select>
-<div class="note muted" style="margin-top:12px">Inclui abertura com o jogo, clips marcados, scoreboard, golos e encerramento. O processamento é local no dispositivo.</div>
-<button class="primary" id="renderBtn" style="margin-top:12px">🎬 GERAR VÍDEO FINAL</button>
+<div class="note muted" style="margin-top:12px">🎯 <b>Modo original:</b> o vídeo final contém apenas os highlights escolhidos e, sempre que possível, corta e junta os ficheiros <b>sem recodificar</b>. Assim mantém a resolução, FPS e qualidade do vídeo original.</div>
+<button class="primary" id="renderBtn" style="margin-top:12px">🎬 GERAR HIGHLIGHTS — QUALIDADE ORIGINAL</button>
 <div id="mp4Box" class="note" style="margin-top:12px">
-<b>📦 Exportar MP4</b>
-<p class="muted small">Depois de gerar o WebM, podes converter para MP4 diretamente no navegador. A conversão usa FFmpeg no próprio dispositivo e pode demorar alguns minutos em vídeos longos.</p>
-<button id="mp4Btn" disabled>🔄 Converter WebM → MP4</button>
-<div id="mp4Status" class="muted small" style="margin-top:7px"></div>
+<b>📦 MP4 original</b>
+<p class="muted small">A montagem é feita localmente no dispositivo. Não envia os vídeos para a internet e não usa OpenAI. O processamento pode demorar em vídeos grandes, mas não reduz a qualidade.</p>
+<div id="mp4Status" class="muted small" style="margin-top:7px">Pronto.</div>
 </div>
 <div class="progress"><div id="bar" class="bar"></div></div><div id="status" class="stat" style="margin-top:8px">Pronto.</div>
 </div>
@@ -170,8 +169,6 @@
 </section>
 </main>
 
-<script src="https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.10/dist/umd/ffmpeg.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@ffmpeg/util@0.12.1/dist/umd/index.js"></script>
 <script>
 const $=id=>document.getElementById(id);
 let videos=[], current=0, marks=[], score=[0,0], rendering=false;
@@ -196,32 +193,16 @@ function readLogo(input,key){
 }
 
 
-let lastWebmBlob=null,lastMp4Url=null;
-async function convertToMP4(){
- if(!lastWebmBlob)return alert('Gera primeiro o vídeo final.');
- const btn=$('mp4Btn');btn.disabled=true;$('mp4Status').textContent='A carregar o motor MP4… (primeira vez pode demorar)';
- try{
-   const {FFmpeg}=window.FFmpegWASM||window.FFmpeg||{};
-   const {fetchFile,toBlobURL}=window.FFmpegUtil||{};
-   if(!FFmpeg||!fetchFile||!toBlobURL) throw new Error('Motor FFmpeg indisponível neste navegador.');
-   const ff=new FFmpeg();
-   ff.on('progress',({progress})=>{$('mp4Status').textContent=`A converter para MP4… ${Math.round(progress*100)}%`});
-   const coreURL=await toBlobURL('https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/umd/ffmpeg-core.js','text/javascript');
-   const wasmURL=await toBlobURL('https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/umd/ffmpeg-core.wasm','application/wasm');
-   await ff.load({coreURL,wasmURL});
-   await ff.writeFile('input.webm',await fetchFile(lastWebmBlob));
-   await ff.exec(['-i','input.webm','-c:v','libx264','-preset','veryfast','-crf','20','-c:a','aac','-b:a','160k','-movflags','+faststart','output.mp4']);
-   const data=await ff.readFile('output.mp4');
-   const blob=new Blob([data.buffer],{type:'video/mp4'});
-   if(lastMp4Url)URL.revokeObjectURL(lastMp4Url);
-   lastMp4Url=URL.createObjectURL(blob);
-   const a=document.createElement('a');a.href=lastMp4Url;a.download=`Football_Highlights_Maduro_${new Date().toISOString().slice(0,10)}.mp4`;
-   a.textContent='⬇️ Guardar MP4';a.className='primary';a.style.display='inline-block';a.style.marginTop='8px';a.style.padding='11px 14px';a.style.borderRadius='10px';a.style.color='#04110a';a.style.fontWeight='800';
-   $('mp4Box').appendChild(a);
-   $('mp4Status').textContent=`MP4 concluído — ${Math.round(blob.size/1024/1024*10)/10} MB`;
- }catch(e){
-   $('mp4Status').textContent='Não foi possível converter: '+e.message;
- }finally{btn.disabled=false}
+let lastVideoBlob=null,lastVideoUrl=null,lastVideoMime='';
+function supportedRecorderMime(){
+  const types=[
+    'video/mp4;codecs="avc1.42E01E"',
+    'video/mp4',
+    'video/webm;codecs=vp9,opus',
+    'video/webm;codecs=vp8,opus',
+    'video/webm'
+  ];
+  return types.find(t=>MediaRecorder.isTypeSupported(t))||'';
 }
 function refresh(){
 $('scoreHome').textContent=$('pv1').textContent=score[0];$('scoreAway').textContent=$('pv2').textContent=score[1];if($('liveScore'))$('liveScore').textContent=`${score[0]} — ${score[1]}`;
@@ -321,40 +302,80 @@ async function renderTitle(ctx,canvas,seconds,title,subtitle){
    ctx.globalAlpha=1;await new Promise(r=>setTimeout(r,1000/fps));
  }
 }
-async function renderFinal(){
- if(!window.MediaRecorder||!HTMLCanvasElement.prototype.captureStream)return alert('Este navegador não suporta a exportação de vídeo diretamente. Atualiza o Safari/Chrome para a versão mais recente.');
- if(rendering)return;if(!videos.length)return alert('Carrega pelo menos um vídeo.');if(!marks.length)return alert('Marca pelo menos um momento.');
- rendering=true;$('renderBtn').disabled=true;$('downloadArea').innerHTML='';$('log').textContent='A iniciar...';$('bar').style.width='0%';
- const segs=getSegments();const [W,H]=canvasSize($('ratio').value,$('quality').value);
- const canvas=document.createElement('canvas');canvas.width=W;canvas.height=H;const ctx=canvas.getContext('2d');
- const mime=MediaRecorder.isTypeSupported('video/webm;codecs=vp9,opus')?'video/webm;codecs=vp9,opus':MediaRecorder.isTypeSupported('video/webm;codecs=vp8,opus')?'video/webm;codecs=vp8,opus':'video/webm';
- const stream=canvas.captureStream(30);const recorder=new MediaRecorder(stream,{mimeType:mime,videoBitsPerSecond:$('quality').value==='high'?6000000:$('quality').value==='medium'?4000000:2500000});
- const chunks=[];recorder.ondataavailable=e=>{if(e.data.size)chunks.push(e.data)};const stopped=new Promise(r=>recorder.onstop=r);recorder.start(250);
- const rv=document.createElement('video');rv.playsInline=true;rv.muted=true;
- try{
-  await renderTitle(ctx,canvas,+$('intro').value,`${$('home').value||'Minha Equipa'}  ${score[0]} — ${score[1]}  ${$('away').value||'Adversário'}`,$('competition').value||'Football Highlights');
-  for(let i=0;i<segs.length;i++){
-   const s=segs[i];$('status').textContent=`A renderizar ${i+1}/${segs.length}: ${s.kind}`;$('bar').style.width=(i/segs.length*100)+'%';log(`Clip ${i+1}: vídeo ${s.video+1}, ${fmt(s.start)} → ${fmt(s.end)}`);
-   rv.src=videos[s.video].url;await waitEvent(rv,'loadedmetadata');await seek(rv,s.start);
-   await new Promise(async resolve=>{
-    let done=false;
-    const finish=()=>{if(done)return;done=true;rv.pause();resolve()};
-    rv.ontimeupdate=()=>{drawFrame(ctx,canvas,rv,s,s.time);if(rv.currentTime>=Math.min(s.end,rv.duration||s.end)-.03)finish()};
-    rv.onended=finish;await rv.play();
-    const check=()=>{if(done)return;if(rv.currentTime>=Math.min(s.end,rv.duration||s.end)-.03)finish();else requestAnimationFrame(check)};check();
-   });
-  }
-  await renderTitle(ctx,canvas,+$('outro').value,'FIM DOS HIGHLIGHTS',`${$('home').value||'Minha Equipa'} ${score[0]} — ${score[1]} ${$('away').value||'Adversário'}`);
-  $('bar').style.width='100%';$('status').textContent='A finalizar ficheiro...';recorder.stop();await stopped;
-  const blob=new Blob(chunks,{type:'video/webm'});lastWebmBlob=blob;$('mp4Btn').disabled=false;const url=URL.createObjectURL(blob);
-  const a=document.createElement('a');a.href=url;a.download=`Football_Highlights_Maduro_${new Date().toISOString().slice(0,10)}.webm`;a.textContent='⬇️ Guardar vídeo final (WebM)';a.className='primary';a.style.display='inline-block';a.style.marginTop='10px';a.style.padding='11px 14px';a.style.borderRadius='10px';a.style.color='#04110a';a.style.fontWeight='800';$('downloadArea').appendChild(a);
-  $('status').textContent=`Concluído — ${Math.round(blob.size/1024/1024*10)/10} MB.`;
-  log('Render concluído. O ficheiro está pronto para guardar.');
-  log('O vídeo é processado no próprio dispositivo. Podes guardar WebM ou, quando suportado, converter localmente para MP4.');
- }catch(e){try{recorder.stop()}catch(_){}$('status').textContent='Erro: '+e.message;log('ERRO: '+e.message);alert('Não foi possível concluir o render: '+e.message)}
- rendering=false;$('renderBtn').disabled=false;
+let ffmpegInstance=null;
+async function loadFFmpeg(){
+  if(ffmpegInstance)return ffmpegInstance;
+  $('mp4Status').textContent='A carregar o motor de montagem MP4… (primeira vez pode demorar)';
+  const addScript=url=>new Promise((res,rej)=>{const x=document.createElement('script');x.src=url;x.onload=res;x.onerror=()=>rej(new Error('Não foi possível carregar o motor MP4.'));document.head.appendChild(x)});
+  if(!window.FFmpegWASM) await addScript('https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.10/dist/umd/ffmpeg.js');
+  if(!window.FFmpegUtil) await addScript('https://cdn.jsdelivr.net/npm/@ffmpeg/util@0.12.1/dist/umd/index.js');
+  const FFmpeg=window.FFmpegWASM?.FFmpeg;
+  const {toBlobURL,fetchFile}=window.FFmpegUtil||{};
+  if(!FFmpeg||!toBlobURL||!fetchFile)throw new Error('Motor MP4 indisponível neste navegador.');
+  const ff=new FFmpeg();
+  ff.on('progress',p=>{if($('mp4Status'))$('mp4Status').textContent=`A montar MP4… ${Math.round((p.progress||0)*100)}%`});
+  ff.on('log',({message})=>{if(message&&/error|invalid|failed/i.test(message))log(message)});
+  const base='https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/umd';
+  await ff.load({
+    coreURL:await toBlobURL(base+'/ffmpeg-core.js','text/javascript'),
+    wasmURL:await toBlobURL(base+'/ffmpeg-core.wasm','application/wasm')
+  });
+  ffmpegInstance=ff; ffmpegInstance.fetchFile=fetchFile;
+  return ffmpegInstance;
 }
-$('renderBtn').onclick=renderFinal;$('mp4Btn').onclick=convertToMP4;
+function mergeSegments(segs){
+  const out=[];
+  for(const s of segs){
+    const prev=out[out.length-1];
+    if(prev && prev.video===s.video && s.start<=prev.end+0.15){
+      prev.end=Math.max(prev.end,s.end); prev.kinds=(prev.kinds||[]).concat(s.kind);
+    }else out.push({...s,kinds:[s.kind]});
+  }
+  return out;
+}
+async function renderFinal(){
+  if(rendering)return;
+  if(!videos.length)return alert('Carrega pelo menos um vídeo.');
+  if(!marks.length)return alert('Marca pelo menos um momento.');
+  rendering=true;$('renderBtn').disabled=true;$('downloadArea').innerHTML='';$('log').textContent='A iniciar montagem original...';$('bar').style.width='0%';
+  try{
+    const rawSegs=getSegments();
+    const segs=mergeSegments(rawSegs);
+    const ff=await loadFFmpeg();
+    const files={};
+    for(let i=0;i<videos.length;i++){
+      const name=`input${i}.mp4`;
+      $('mp4Status').textContent=`A preparar vídeo ${i+1}/${videos.length}…`;
+      await ff.writeFile(name,await ff.fetchFile(videos[i].file));
+      files[i]=name;
+    }
+    const segmentNames=[];
+    for(let i=0;i<segs.length;i++){
+      const s=segs[i], out=`clip${i}.mp4`;
+      const duration=Math.max(.1,s.end-s.start);
+      $('status').textContent=`A extrair highlight ${i+1}/${segs.length}`;
+      $('bar').style.width=Math.round(i/segs.length*85)+'%';
+      log(`Highlight ${i+1}: vídeo ${s.video+1}, ${fmt(s.start)} → ${fmt(s.end)}`);
+      await ff.exec(['-ss',String(s.start),'-i',files[s.video],'-t',String(duration),'-map','0:v:0?','-map','0:a:0?','-c','copy','-avoid_negative_ts','make_zero',out]);
+      segmentNames.push(out);
+    }
+    // concat demuxer: no recoding, so the selected clips keep their original streams.
+    let list='';
+    for(const n of segmentNames)list+=`file '${n}'\n`;
+    await ff.writeFile('concat.txt',new TextEncoder().encode(list));
+    $('mp4Status').textContent='A juntar os highlights sem recodificar…';
+    await ff.exec(['-f','concat','-safe','0','-i','concat.txt','-c','copy','-movflags','+faststart','final.mp4']);
+    const data=await ff.readFile('final.mp4');
+    const blob=new Blob([data.buffer],{type:'video/mp4'});
+    lastVideoBlob=blob;lastVideoMime='video/mp4';
+    if(lastVideoUrl)URL.revokeObjectURL(lastVideoUrl);lastVideoUrl=URL.createObjectURL(blob);
+    const a=document.createElement('a');a.href=lastVideoUrl;a.download=`Football_Highlights_Maduro_${new Date().toISOString().slice(0,10)}.mp4`;a.textContent='⬇️ GUARDAR HIGHLIGHTS (MP4 ORIGINAL)';a.className='primary';a.style.display='inline-block';a.style.marginTop='10px';a.style.padding='11px 14px';a.style.borderRadius='10px';a.style.color='#04110a';a.style.fontWeight='800';$('downloadArea').appendChild(a);
+    $('bar').style.width='100%';$('mp4Status').textContent='✅ MP4 pronto — sem recodificação.';$('status').textContent=`Concluído — ${Math.round(blob.size/1024/1024*10)/10} MB.`;log('Montagem concluída. Os highlights foram unidos sem recodificação.');
+  }catch(e){
+    $('status').textContent='Erro: '+(e.message||e);$('mp4Status').textContent='❌ Não foi possível criar o MP4 original.';log('ERRO: '+(e.message||e));alert('Não foi possível montar o MP4 mantendo a qualidade original. Em iPhone, vídeos muito grandes podem exceder a memória disponível.');
+  }finally{rendering=false;$('renderBtn').disabled=false;}
+}
+$('renderBtn').onclick=renderFinal;
 
 
 // ---------- IA LOCAL / DETEÇÃO INTELIGENTE ----------
