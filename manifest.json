@@ -1,7 +1,7 @@
 {
   "name": "Football Highlights Maduro Studio",
   "short_name": "Maduro Studio",
-  "start_url": "./index-v12.html",
+  "start_url": "./index-v13.html",
   "display": "standalone",
   "background_color": "#07111f",
   "theme_color": "#07111f",
