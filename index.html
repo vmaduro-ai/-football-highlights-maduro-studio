@@ -303,26 +303,91 @@ async function renderTitle(ctx,canvas,seconds,title,subtitle){
  }
 }
 let ffmpegInstance=null;
+let ffmpegFetchFile=null;
+
+function isIOSDevice(){
+  return /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+    (navigator.platform==='MacIntel' && navigator.maxTouchPoints>1);
+}
+function addScriptOnce(id,url){
+  return new Promise((resolve,reject)=>{
+    const existing=document.getElementById(id);
+    if(existing){
+      if(existing.dataset.loaded==='1') return resolve();
+      existing.addEventListener('load',()=>resolve(),{once:true});
+      existing.addEventListener('error',()=>reject(new Error('Não foi possível carregar o motor MP4.')),{once:true});
+      return;
+    }
+    const s=document.createElement('script');
+    s.id=id;s.src=url;
+    s.onload=()=>{s.dataset.loaded='1';resolve()};
+    s.onerror=()=>reject(new Error('Não foi possível carregar o motor MP4.'));
+    document.head.appendChild(s);
+  });
+}
+function withTimeout(promise,ms){
+  return Promise.race([
+    promise,
+    new Promise((_,reject)=>setTimeout(()=>reject(new Error('O motor MP4 demorou demasiado a iniciar.')),ms))
+  ]);
+}
 async function loadFFmpeg(){
   if(ffmpegInstance)return ffmpegInstance;
-  $('mp4Status').textContent='A carregar o motor de montagem MP4… (primeira vez pode demorar)';
-  const addScript=url=>new Promise((res,rej)=>{const x=document.createElement('script');x.src=url;x.onload=res;x.onerror=()=>rej(new Error('Não foi possível carregar o motor MP4.'));document.head.appendChild(x)});
-  if(!window.FFmpegWASM) await addScript('https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.10/dist/umd/ffmpeg.js');
-  if(!window.FFmpegUtil) await addScript('https://cdn.jsdelivr.net/npm/@ffmpeg/util@0.12.1/dist/umd/index.js');
-  const FFmpeg=window.FFmpegWASM?.FFmpeg;
-  const {toBlobURL,fetchFile}=window.FFmpegUtil||{};
-  if(!FFmpeg||!toBlobURL||!fetchFile)throw new Error('Motor MP4 indisponível neste navegador.');
-  const ff=new FFmpeg();
-  ff.on('progress',p=>{if($('mp4Status'))$('mp4Status').textContent=`A montar MP4… ${Math.round((p.progress||0)*100)}%`});
-  ff.on('log',({message})=>{if(message&&/error|invalid|failed/i.test(message))log(message)});
-  const base='https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/umd';
-  await ff.load({
-    coreURL:await toBlobURL(base+'/ffmpeg-core.js','text/javascript'),
-    wasmURL:await toBlobURL(base+'/ffmpeg-core.wasm','application/wasm')
-  });
-  ffmpegInstance=ff; ffmpegInstance.fetchFile=fetchFile;
-  return ffmpegInstance;
+  const ios=isIOSDevice();
+  $('mp4Status').textContent=ios
+    ? 'A carregar o motor MP4 compatível com iPhone…'
+    : 'A carregar o motor MP4… (primeira vez pode demorar)';
+
+  // No iPhone/iPad usamos ffmpeg.wasm 0.11 single-thread, que não depende
+  // de cross-origin isolation (GitHub Pages não permite configurar COOP/COEP).
+  if(ios){
+    await addScriptOnce('ffmpeg-011','https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.11.6/dist/ffmpeg.min.js');
+    const createFFmpeg=window.FFmpeg?.createFFmpeg;
+    const fetchFile=window.FFmpeg?.fetchFile;
+    if(!createFFmpeg||!fetchFile)throw new Error('Motor MP4 incompatível com este iPhone.');
+    const ff=createFFmpeg({
+      log:false,
+      corePath:'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.11.6/dist/ffmpeg-core.js'
+    });
+    ff.setProgress(({ratio})=>{
+      if($('mp4Status'))$('mp4Status').textContent=`A montar MP4… ${Math.round(Math.max(0,Math.min(1,ratio||0))*100)}%`;
+    });
+    await withTimeout(ff.load(),90000);
+    ffmpegInstance=ff;ffmpegFetchFile=fetchFile;
+    return ff;
+  }
+
+  try{
+    await addScriptOnce('ffmpeg-012','https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.10/dist/umd/ffmpeg.js');
+    await addScriptOnce('ffmpeg-util-012','https://cdn.jsdelivr.net/npm/@ffmpeg/util@0.12.1/dist/umd/index.js');
+    const FFmpeg=window.FFmpegWASM?.FFmpeg;
+    const {toBlobURL,fetchFile}=window.FFmpegUtil||{};
+    if(!FFmpeg||!toBlobURL||!fetchFile)throw new Error('Motor 0.12 indisponível.');
+    const ff=new FFmpeg();
+    ff.on('progress',p=>{if($('mp4Status'))$('mp4Status').textContent=`A montar MP4… ${Math.round((p.progress||0)*100)}%`});
+    const base='https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/umd';
+    await withTimeout(ff.load({
+      coreURL:await toBlobURL(base+'/ffmpeg-core.js','text/javascript'),
+      wasmURL:await toBlobURL(base+'/ffmpeg-core.wasm','application/wasm')
+    }),90000);
+    ffmpegInstance=ff;ffmpegFetchFile=fetchFile;
+    return ff;
+  }catch(firstError){
+    log('Motor MP4 0.12 falhou; a tentar modo compatível…');
+    await addScriptOnce('ffmpeg-011','https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.11.6/dist/ffmpeg.min.js');
+    const createFFmpeg=window.FFmpeg?.createFFmpeg;
+    const fetchFile=window.FFmpeg?.fetchFile;
+    if(!createFFmpeg||!fetchFile)throw firstError;
+    const ff=createFFmpeg({log:false,corePath:'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.11.6/dist/ffmpeg-core.js'});
+    ff.setProgress(({ratio})=>{
+      if($('mp4Status'))$('mp4Status').textContent=`A montar MP4… ${Math.round(Math.max(0,Math.min(1,ratio||0))*100)}%`;
+    });
+    await withTimeout(ff.load(),90000);
+    ffmpegInstance=ff;ffmpegFetchFile=fetchFile;
+    return ff;
+  }
 }
+
 function mergeSegments(segs){
   const out=[];
   for(const s of segs){
@@ -346,7 +411,7 @@ async function renderFinal(){
     for(let i=0;i<videos.length;i++){
       const name=`input${i}.mp4`;
       $('mp4Status').textContent=`A preparar vídeo ${i+1}/${videos.length}…`;
-      await ff.writeFile(name,await ff.fetchFile(videos[i].file));
+      await ff.writeFile(name,await ffmpegFetchFile(videos[i].file));
       files[i]=name;
     }
     const segmentNames=[];
@@ -356,7 +421,7 @@ async function renderFinal(){
       $('status').textContent=`A extrair highlight ${i+1}/${segs.length}`;
       $('bar').style.width=Math.round(i/segs.length*85)+'%';
       log(`Highlight ${i+1}: vídeo ${s.video+1}, ${fmt(s.start)} → ${fmt(s.end)}`);
-      await ff.exec(['-ss',String(s.start),'-i',files[s.video],'-t',String(duration),'-map','0:v:0?','-map','0:a:0?','-c','copy','-avoid_negative_ts','make_zero',out]);
+      if(ff.exec) { await ff.exec(['-ss',String(s.start),'-i',files[s.video],'-t',String(duration),'-map','0:v:0?','-map','0:a:0?','-c','copy','-avoid_negative_ts','make_zero',out]); } else { await ff.run('-ss',String(s.start),'-i',files[s.video],'-t',String(duration),'-map','0:v:0','-map','0:a:0?','-c','copy','-avoid_negative_ts','make_zero',out); }
       segmentNames.push(out);
     }
     // concat demuxer: no recoding, so the selected clips keep their original streams.
@@ -364,7 +429,7 @@ async function renderFinal(){
     for(const n of segmentNames)list+=`file '${n}'\n`;
     await ff.writeFile('concat.txt',new TextEncoder().encode(list));
     $('mp4Status').textContent='A juntar os highlights sem recodificar…';
-    await ff.exec(['-f','concat','-safe','0','-i','concat.txt','-c','copy','-movflags','+faststart','final.mp4']);
+    if(ff.exec) { await ff.exec(['-f','concat','-safe','0','-i','concat.txt','-c','copy','-movflags','+faststart','final.mp4']); } else { await ff.run('-f','concat','-safe','0','-i','concat.txt','-c','copy','-movflags','+faststart','final.mp4'); }
     const data=await ff.readFile('final.mp4');
     const blob=new Blob([data.buffer],{type:'video/mp4'});
     lastVideoBlob=blob;lastVideoMime='video/mp4';
@@ -372,7 +437,7 @@ async function renderFinal(){
     const a=document.createElement('a');a.href=lastVideoUrl;a.download=`Football_Highlights_Maduro_${new Date().toISOString().slice(0,10)}.mp4`;a.textContent='⬇️ GUARDAR HIGHLIGHTS (MP4 ORIGINAL)';a.className='primary';a.style.display='inline-block';a.style.marginTop='10px';a.style.padding='11px 14px';a.style.borderRadius='10px';a.style.color='#04110a';a.style.fontWeight='800';$('downloadArea').appendChild(a);
     $('bar').style.width='100%';$('mp4Status').textContent='✅ MP4 pronto — sem recodificação.';$('status').textContent=`Concluído — ${Math.round(blob.size/1024/1024*10)/10} MB.`;log('Montagem concluída. Os highlights foram unidos sem recodificação.');
   }catch(e){
-    $('status').textContent='Erro: '+(e.message||e);$('mp4Status').textContent='❌ Não foi possível criar o MP4 original.';log('ERRO: '+(e.message||e));alert('Não foi possível montar o MP4 mantendo a qualidade original. Em iPhone, vídeos muito grandes podem exceder a memória disponível.');
+    $('status').textContent='Erro: '+(e.message||e);$('mp4Status').textContent='❌ Não foi possível criar o MP4 original.';log('ERRO: '+(e.message||e));alert('Não foi possível montar o MP4. No iPhone, vídeos muito grandes podem exceder a memória disponível.');
   }finally{rendering=false;$('renderBtn').disabled=false;}
 }
 $('renderBtn').onclick=renderFinal;
