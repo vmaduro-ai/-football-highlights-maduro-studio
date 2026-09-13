@@ -2,14 +2,7 @@
 <html lang="pt-PT">
 <head>
 
-<!-- VERSÃO ESTÁVEL — Football Highlights Maduro Studio
-<!-- V10 TRUE AI BACKEND HOOK
-     The V9 local motion detector remains available. The V10 backend contract is:
-     POST {backendUrl}/analyze with:
-     { frames:[{time:number,image:"data:image/jpeg;base64,..."}], context:{...} }
-     -> { events:[{time,type,confidence,reason}] }
-     Configure a deployed backend URL in the app when available.
--->
+<!-- VERSÃO ESTÁVEL — Football Highlights Maduro Studio · 100% local -->
 
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
@@ -42,7 +35,7 @@
   } catch(e) {}
 })();
 </script>
-<header><h1>⚽ Football Highlights Maduro Studio</h1><small>Highlights profissionais — PC · iPhone · Android</small></header>
+<header><h1>⚽ Football Highlights Maduro Studio</h1><small>Highlights profissionais — PC · iPhone · Android · processamento local</small></header>
 <main>
 <div class="tabs">
 <button class="tab active" data-tab="game">1 · Jogo</button><button class="tab" data-tab="media">2 · Vídeos</button><button class="tab" data-tab="marks">3 · Momentos</button><button class="tab" data-tab="style">4 · Scoreboard</button><button class="tab" data-tab="render">5 · Gerar</button>
@@ -90,18 +83,18 @@
 </div>
 <div class="aiCard">
   <div class="aiHead">
-    <div><b>🤖 Assistente IA de Highlights</b><span class="tag aiTag">IA local</span></div>
+    <div><b>⚡ Deteção automática de Highlights</b><span class="tag aiTag">100% local</span></div>
     <span class="aiSmall">Analisa o vídeo sem enviar o ficheiro para a internet</span>
   </div>
-  <p class="muted small">A IA procura automaticamente momentos de maior ação e apresenta-os como candidatos. Tu confirmas o que queres transformar em highlight.</p>
+  <p class="muted small">O navegador procura automaticamente momentos de maior ação e apresenta-os como candidatos. Tu confirmas o que queres transformar em highlight.</p>
   <div class="row">
-    <button id="aiAnalyze" class="primary">🤖 Analisar este vídeo</button>
+    <button id="aiAnalyze" class="primary">⚡ Detetar Highlights automaticamente</button>
     <button id="aiClear">Limpar candidatos</button>
   </div>
   <div class="progress aiProgress"><div id="aiBar" class="bar"></div></div>
   <div id="aiStatus" class="aiStatus">Pronto para analisar.</div>
   <div id="aiCandidates" class="aiCandidates"><span class="muted">Ainda não existem candidatos.</span></div>
-  <div class="aiNote">💡 Para deteção semiautomática de golos, defesas e oportunidades, confirma os candidatos. A versão seguinte pode ligar um motor de visão computacional num servidor, sem expor nenhuma chave no navegador.</div>
+  <div class="aiNote">💡 A deteção é baseada no movimento da imagem e funciona no próprio iPhone, Android ou PC. Confirma os candidatos antes de os transformar em highlights. Não usa OpenAI nem requer créditos.</div>
 </div>
 
 <div class="row" style="margin-top:8px"><button id="prev">◀ Anterior</button><button id="next">Seguinte ▶</button></div>
@@ -313,6 +306,7 @@ async function renderTitle(ctx,canvas,seconds,title,subtitle){
  }
 }
 async function renderFinal(){
+ if(!window.MediaRecorder||!HTMLCanvasElement.prototype.captureStream)return alert('Este navegador não suporta a exportação de vídeo diretamente. Atualiza o Safari/Chrome para a versão mais recente.');
  if(rendering)return;if(!videos.length)return alert('Carrega pelo menos um vídeo.');if(!marks.length)return alert('Marca pelo menos um momento.');
  rendering=true;$('renderBtn').disabled=true;$('downloadArea').innerHTML='';$('log').textContent='A iniciar...';$('bar').style.width='0%';
  const segs=getSegments();const [W,H]=canvasSize($('ratio').value,$('quality').value);
@@ -340,12 +334,149 @@ async function renderFinal(){
   const a=document.createElement('a');a.href=url;a.download=`Football_Highlights_Maduro_${new Date().toISOString().slice(0,10)}.webm`;a.textContent='⬇️ Guardar vídeo final (WebM)';a.className='primary';a.style.display='inline-block';a.style.marginTop='10px';a.style.padding='11px 14px';a.style.borderRadius='10px';a.style.color='#04110a';a.style.fontWeight='800';$('downloadArea').appendChild(a);
   $('status').textContent=`Concluído — ${Math.round(blob.size/1024/1024*10)/10} MB.`;
   log('Render concluído. O ficheiro está pronto para guardar.');
-  log('Nota: a versão Web está a exportar WebM. Para MP4 universal, é preciso uma etapa FFmpeg/servidor.');
+  log('O vídeo é processado no próprio dispositivo. Podes guardar WebM ou, quando suportado, converter localmente para MP4.');
  }catch(e){try{recorder.stop()}catch(_){}$('status').textContent='Erro: '+e.message;log('ERRO: '+e.message);alert('Não foi possível concluir o render: '+e.message)}
  rendering=false;$('renderBtn').disabled=false;
 }
 $('renderBtn').onclick=renderFinal;$('mp4Btn').onclick=convertToMP4;
 
+
+// ---------- IA LOCAL / DETEÇÃO INTELIGENTE ----------
+let aiCandidates=[];
+
+function aiTime(t){return fmt(t)}
+function clamp(n,a,b){return Math.max(a,Math.min(b,n))}
+
+function aiRenderCandidates(){
+  const box=$('aiCandidates');
+  if(!aiCandidates.length){
+    box.innerHTML='<span class="muted">Ainda não existem candidatos.</span>';
+    return;
+  }
+  box.innerHTML=aiCandidates.map((c,i)=>`
+    <div class="aiCandidate">
+      <div class="aiScore">${Math.round(c.score)}%</div>
+      <div>
+        <div class="aiTime">${aiTime(c.time)} · ${esc(c.label)}</div>
+        <div class="aiReason">${esc(c.reason)}</div>
+      </div>
+      <button class="primary" data-ai-add="${i}">➕ Adicionar</button>
+    </div>`).join('');
+  box.querySelectorAll('[data-ai-add]').forEach(b=>b.onclick=()=>{
+    const c=aiCandidates[+b.dataset.aiAdd];
+    if(!c)return;
+    // Candidate starts as a generic highlight. User can change/delete it afterwards.
+    marks.push({kind:c.label,time:c.time,video:current,scorer:'',assist:'',ai:true});
+    marks.sort((a,b)=>a.video-b.video||a.time-b.time);
+    refresh();
+    aiCandidates.splice(+b.dataset.aiAdd,1);
+    aiRenderCandidates();
+  });
+}
+
+function aiClear(){
+  aiCandidates=[];
+  aiRenderCandidates();
+  if($('aiBar'))$('aiBar').style.width='0%';
+  if($('aiStatus'))$('aiStatus').textContent='Candidatos limpos.';
+}
+
+async function aiAnalyzeVideo(){
+  if(!videos.length)return alert('Carrega primeiro um vídeo.');
+  const source=videos[current];
+  const status=$('aiStatus'), bar=$('aiBar');
+  $('aiAnalyze').disabled=true;
+  aiCandidates=[];
+  aiRenderCandidates();
+  status.textContent='A preparar análise local…';
+  bar.style.width='2%';
+
+  const v=document.createElement('video');
+  v.src=source.url; v.muted=true; v.playsInline=true; preload='metadata';
+  await waitEvent(v,'loadedmetadata');
+  if(!isFinite(v.duration)||v.duration<=0)throw new Error('Duração do vídeo indisponível.');
+
+  const canvas=document.createElement('canvas');
+  const w=160,h=90; canvas.width=w;canvas.height=h;
+  const ctx=canvas.getContext('2d',{willReadFrequently:true});
+
+  // Sampling density is deliberately moderate so it works on iPhone as well.
+  const step=v.duration>900?3:v.duration>300?2:1.5;
+  const samples=[];
+  let previous=null;
+
+  for(let t=0;t<v.duration;t+=step){
+    await seek(v,t);
+    ctx.drawImage(v,0,0,w,h);
+    const data=ctx.getImageData(0,0,w,h).data;
+    let motion=0;
+    if(previous){
+      let diff=0;
+      // Sample every 4th pixel to keep mobile CPUs responsive.
+      for(let p=0;p<data.length;p+=16){
+        diff += Math.abs(data[p]-previous[p]) + Math.abs(data[p+1]-previous[p+1]) + Math.abs(data[p+2]-previous[p+2]);
+      }
+      motion=diff/(data.length/16*3*255);
+    }
+    previous=data;
+    samples.push({t,motion});
+    bar.style.width=Math.round((t/v.duration)*70)+'%';
+    status.textContent=`A analisar vídeo… ${Math.round((t/v.duration)*100)}%`;
+    await new Promise(r=>setTimeout(r,0));
+  }
+
+  // Detect peaks above the local baseline, then merge nearby peaks.
+  const vals=samples.map(x=>x.motion);
+  const sorted=[...vals].sort((a,b)=>a-b);
+  const q=sorted[Math.floor(sorted.length*0.78)]||0.12;
+  const threshold=Math.max(q,0.07);
+  const peaks=[];
+  for(let i=1;i<samples.length-1;i++){
+    const m=samples[i].motion;
+    if(m>=threshold && m>=samples[i-1].motion && m>=samples[i+1].motion){
+      peaks.push({t:samples[i].t,m});
+    }
+  }
+  peaks.sort((a,b)=>b.m-a.m);
+
+  // Keep well-separated candidates; up to 12 per video for mobile performance.
+  const chosen=[];
+  for(const p of peaks){
+    if(chosen.every(x=>Math.abs(x.t-p.t)>8)){
+      chosen.push(p);
+      if(chosen.length>=12)break;
+    }
+  }
+  chosen.sort((a,b)=>a.t-b.t);
+
+  aiCandidates=chosen.map(p=>{
+    const confidence=clamp(55 + (p.m-threshold)*180,55,96);
+    return {
+      time:+p.t.toFixed(2),
+      score:confidence,
+      label:'Destaque',
+      reason:'Pico de movimento/ação detectado automaticamente'
+    };
+  });
+
+  bar.style.width='100%';
+  status.textContent=aiCandidates.length
+    ? `Análise concluída: ${aiCandidates.length} candidatos encontrados.`
+    : 'Não foram encontrados picos de ação suficientemente fortes.';
+  aiRenderCandidates();
+  $('aiAnalyze').disabled=false;
+}
+
+$('aiAnalyze').onclick=async()=>{
+  try{await aiAnalyzeVideo()}catch(e){
+    $('aiStatus').textContent='Erro na análise: '+e.message;
+    $('aiAnalyze').disabled=false;
+  }
+};
+$('aiClear').onclick=aiClear;
+$('player').addEventListener('loadedmetadata',()=>{
+  if($('aiStatus'))$('aiStatus').textContent='Vídeo pronto para deteção automática local.';
+});
 
 function projectData(){
  return {
@@ -368,86 +499,7 @@ $('resetProject').onclick=()=>{if(confirm('Criar um novo jogo? Os vídeos escolh
 
 refresh();
 </script>
-<!-- IA AUTOMÁTICA ESTÁVEL — ÚNICO MÓDULO -->
-<section id="v13-ai" style="margin:20px auto;max-width:1100px;padding:18px;border:1px solid #ddd;border-radius:16px;background:#fff;color:#222">
-<h2 style="margin:0">🧠 IA de Highlights — AUTOMÁTICA</h2>
-<p style="color:#666">Deteção local de ação → análise semântica por visão → confirmação → highlight</p>
-<div style="display:grid;grid-template-columns:1.5fr .5fr .5fr;gap:12px">
-<label>Backend de IA<input id="aiBackendUrl" type="url" placeholder="https://maduro-studio-ai.onrender.com" style="display:block;width:100%;box-sizing:border-box;margin-top:6px;padding:11px;border:1px solid #ccc;border-radius:10px"></label>
-<label>Antes (s)<input id="aiPre" type="number" min="0" max="30" value="8" style="display:block;width:100%;box-sizing:border-box;margin-top:6px;padding:11px;border:1px solid #ccc;border-radius:10px"></label>
-<label>Depois (s)<input id="aiPost" type="number" min="0" max="30" value="8" style="display:block;width:100%;box-sizing:border-box;margin-top:6px;padding:11px;border:1px solid #ccc;border-radius:10px"></label>
-</div>
-<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px">
-<button id="aiSave">💾 Guardar</button><button id="aiTest">🔌 Testar ligação</button><button id="aiAnalyze" class="primary">🤖 ANALISAR VÍDEO COM IA</button><button id="aiClear">🧹 Limpar</button>
-</div>
-<div style="height:9px;background:#e9edf2;border-radius:99px;overflow:hidden;margin-top:14px"><div id="aiBar" style="height:100%;width:0;background:#43e58a"></div></div>
-<div id="aiStatus" style="margin-top:10px;color:#555">Vídeo carregado. Pronto para análise IA.</div>
-<div id="aiCandidates" style="margin-top:12px;display:grid;gap:9px"></div>
-<p style="font-size:11px;color:#666;line-height:1.4;border-left:3px solid #43e58a;padding-left:8px">O vídeo inteiro não é enviado. Procuramos localmente picos de ação e enviamos apenas imagens dos momentos candidatos para a IA.</p>
-</section>
-<script>
-// IA ESTÁVEL — ligação robusta ao vídeo selecionado
-(function(){
-  function initAI(){
-    const $=id=>document.getElementById(id);
-    const btn=$('aiAnalyze'), test=$('aiTest'), saveBtn=$('aiSave'), clearBtn=$('aiClear');
-    const backend=$('aiBackendUrl'), pre=$('aiPre'), post=$('aiPost'), status=$('aiStatus'), bar=$('aiBar'), list=$('aiCandidates');
-    if(!btn||!backend||!status||!bar||!list) return;
-    const KEY='fhms_ai_config_v2';
-    let events=[];
-    const getVideos=()=>Array.isArray(window.videos)?window.videos:[];
-    const getCurrent=()=>Number.isInteger(window.current)?window.current:0;
-    function save(){try{localStorage.setItem(KEY,JSON.stringify({backend:backend.value.trim().replace(/\/$/,''),pre:Number(pre.value)||8,post:Number(post.value)||8}));}catch(e){}}
-    try{const c=JSON.parse(localStorage.getItem(KEY)||'{}');backend.value=c.backend||backend.value||'https://maduro-studio-ai.onrender.com';pre.value=c.pre??8;post.value=c.post??8;}catch(e){backend.value=backend.value||'https://maduro-studio-ai.onrender.com';}
-    saveBtn.onclick=()=>{save();status.textContent='✓ Configuração guardada.';};
-    clearBtn.onclick=()=>{events=[];list.innerHTML='';bar.style.width='0%';status.textContent='Candidatos limpos.';};
-    test.onclick=async()=>{const u=backend.value.trim().replace(/\/$/,'');if(!u){status.textContent='⚠️ Introduz o URL do backend.';return;}status.textContent='🔌 A testar ligação…';try{const r=await fetch(u+'/',{cache:'no-store'});const j=await r.json();if(!r.ok)throw Error(j.error||'HTTP '+r.status);status.textContent='✅ Backend online: '+(j.service||'Football Highlights Maduro Studio AI')+' · '+(j.model||'modelo configurado');}catch(e){status.textContent='❌ Falha na ligação: '+(e.message||e);}};
-    function wait(ms){return new Promise(r=>setTimeout(r,ms));}
-    function seek(v,t){return new Promise((resolve,reject)=>{const target=Math.max(0,Math.min(t,(v.duration||t)-0.05));if(Math.abs((v.currentTime||0)-target)<0.08){resolve();return;}let done=false;const clean=()=>{v.removeEventListener('seeked',ok);v.removeEventListener('error',bad);clearTimeout(timer)};const ok=()=>{if(done)return;done=true;clean();resolve()};const bad=()=>{if(done)return;done=true;clean();reject(new Error('Não foi possível procurar no vídeo.'))};const timer=setTimeout(()=>{if(done)return;done=true;clean();reject(new Error('O iPhone demorou demasiado a procurar no vídeo.'))},8000);v.addEventListener('seeked',ok,{once:true});v.addEventListener('error',bad,{once:true});try{v.currentTime=target}catch(e){bad()}});}
-    function label(t){return ({goal_home:'⚽ Golo nosso',goal_away:'🔴 Golo adversário',save:'🧤 Defesa',chance:'🎯 Oportunidade',highlight:'⭐ Destaque'})[t]||'⭐ Destaque';}
-    function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);}
-    function render(){if(!events.length){list.innerHTML='<span style="color:#666">A IA não encontrou momentos com confiança suficiente.</span>';return;}list.innerHTML=events.map((e,i)=>{const pct=Math.round(Math.max(0,Math.min(1,Number(e.confidence)||0))*100);return '<div style="padding:12px;border:1px solid #ddd;border-radius:12px;background:#fafafa"><b>'+label(e.type)+'</b> · '+Number(e.time).toFixed(1)+'s · '+pct+'%<div style="font-size:13px;color:#666;margin:5px 0">'+esc(e.reason)+'</div><button data-ok="'+i+'">✅ Confirmar</button> <button data-no="'+i+'">✕ Ignorar</button></div>'}).join('');list.querySelectorAll('[data-ok]').forEach(b=>b.onclick=()=>{const e=events[+b.dataset.ok];window.dispatchEvent(new CustomEvent('fhms-ai-confirm',{detail:e}));b.disabled=true;b.textContent='✓ Confirmado';});list.querySelectorAll('[data-no]').forEach(b=>b.onclick=()=>b.parentElement.remove());}
-    async function analyze(){
-      if(btn.disabled)return;
-      const player=$('player'), vids=getVideos(), idx=getCurrent();
-      // Garante que a IA tem sempre o vídeo atualmente selecionado.
-      if(player && !player.src && vids[idx] && vids[idx].url) player.src=vids[idx].url;
-      if(!player || !player.src){status.textContent='⚠️ Seleciona primeiro um vídeo no separador “Vídeos”.';return;}
-      const u=backend.value.trim().replace(/\/$/,'');if(!u){status.textContent='⚠️ Introduz o URL do backend.';return;}
-      btn.disabled=true;events=[];list.innerHTML='';bar.style.width='2%';save();
-      const oldTime=Number(player.currentTime)||0;
-      try{
-        if(player.readyState<1){status.textContent='⏳ A preparar o vídeo…';await new Promise((res,rej)=>{const ok=()=>{clean();res()};const bad=()=>{clean();rej(new Error('O vídeo não ficou disponível.'))};const clean=()=>{player.removeEventListener('loadedmetadata',ok);player.removeEventListener('error',bad)};player.addEventListener('loadedmetadata',ok,{once:true});player.addEventListener('error',bad,{once:true});});}
-        const duration=Number(player.duration);if(!Number.isFinite(duration)||duration<=0)throw new Error('Duração do vídeo indisponível.');
-        const c=document.createElement('canvas'),ctx=c.getContext('2d',{willReadFrequently:true});c.width=160;c.height=90;
-        const step=duration>900?6:duration>300?3:2;const samples=[];let prev=null;
-        status.textContent='🔎 A procurar momentos de ação…';
-        for(let t=0;t<duration;t+=step){await seek(player,t);ctx.drawImage(player,0,0,c.width,c.height);const d=ctx.getImageData(0,0,c.width,c.height).data;let diff=0;if(prev){for(let p=0;p<d.length;p+=24)diff+=Math.abs(d[p]-prev[p])+Math.abs(d[p+1]-prev[p+1])+Math.abs(d[p+2]-prev[p+2]);diff/=Math.max(1,(d.length/24)*3*255)}prev=d;samples.push({t,m:diff});bar.style.width=Math.min(45,Math.round(t/duration*45))+'%';await wait(0)}
-        const sorted=samples.map(x=>x.m).sort((a,b)=>a-b), threshold=Math.max(sorted[Math.floor(sorted.length*.75)]||.05,.05), peaks=[];
-        for(let i=1;i<samples.length-1;i++)if(samples[i].m>=threshold&&samples[i].m>=samples[i-1].m&&samples[i].m>=samples[i+1].m)peaks.push(samples[i]);
-        peaks.sort((a,b)=>b.m-a.m);const chosen=[];for(const p of peaks){if(chosen.every(x=>Math.abs(x.t-p.t)>10)){chosen.push(p);if(chosen.length>=6)break;}}
-        if(!chosen.length)throw new Error('Não encontrei picos de ação suficientes no vídeo.');
-        chosen.sort((a,b)=>a.t-b.t);status.textContent='🧠 A IA está a analisar '+chosen.length+' momentos…';c.width=480;c.height=270;const frames=[];
-        for(let i=0;i<chosen.length;i++){const t=chosen[i].t;for(const tt of [Math.max(0,t-1.2),t,Math.min(duration-.05,t+1.2)]){await seek(player,tt);ctx.drawImage(player,0,0,480,270);frames.push({time:+tt.toFixed(2),image:c.toDataURL('image/jpeg',.72)})}bar.style.width=(50+Math.round((i+1)/chosen.length*30))+'%'}
-        const r=await fetch(u+'/analyze',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({frames:frames.slice(0,18),context:{home:$('home')?.value||'',away:$('away')?.value||'',video:vids[idx]?.name||'Vídeo',duration}})});
-        const data=await r.json();if(!r.ok)throw new Error(data.error||'HTTP '+r.status);events=(Array.isArray(data.events)?data.events:[]).map(e=>({...e,time:Number(e.time),confidence:Number(e.confidence)||0})).filter(e=>Number.isFinite(e.time)).sort((a,b)=>a.time-b.time);bar.style.width='100%';status.textContent=events.length?'✅ IA concluiu. Confirma os momentos que queres.':'ℹ️ A IA não encontrou eventos com confiança suficiente.';render();
-      }catch(e){bar.style.width='0%';status.textContent='❌ '+(e.message||'Erro na análise.');}finally{try{player.currentTime=oldTime}catch(e){}btn.disabled=false;}
-    }
-    btn.onclick=analyze;
-    window.addEventListener('fhms-ai-confirm',ev=>{const e=ev.detail||{},map={goal_home:'Golo nosso',goal_away:'Golo adversário',save:'Defesa',chance:'Oportunidade',highlight:'Destaque'},kind=map[e.type]||'Destaque';if(Array.isArray(window.marks)){window.marks.push({kind,time:+Number(e.time).toFixed(2),video:getCurrent(),scorer:'',assist:'',ai:true,semantic:true});window.marks.sort((a,b)=>a.video-b.video||a.time-b.time);if(typeof window.refresh==='function')window.refresh();}});
-    window.FHMS_AI_READY=true;
-  }
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',initAI,{once:true});else initAI();
-})();
-</script>
-<div style="text-align:center;color:#71839a;font-size:10px;padding:10px 0 18px">Football Highlights Maduro Studio · VERSÃO ESTÁVEL · IA de Highlights</div>
+<div style="text-align:center;color:#71839a;font-size:10px;padding:10px 0 18px">Football Highlights Maduro Studio · VERSÃO ESTÁVEL · 100% gratuito e local</div>
 
-<script>
-// Atualização automática da aplicação: a página estável é index.html.
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js').catch(() => {});
-  });
-}
-</script>
+
 </body></html>
