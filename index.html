@@ -9,60 +9,10 @@
 <meta name="theme-color" content="#07111f"><link rel="manifest" href="manifest.json"><link rel="apple-touch-icon" href="icon.svg">
 <title>Football Highlights Maduro Studio</title>
 <style>
-:root{--bg:#07111f;--panel:#101c2e;--panel2:#0b1626;--line:#253750;--text:#f7f9fc;--muted:#9eacc0;--green:#43e58a;--red:#f05252}
-*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 80% 0,#183052 0,#07111f 42%);color:var(--text);font:15px system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}header{position:sticky;top:0;z-index:20;background:#07111feF;backdrop-filter:blur(14px);border-bottom:1px solid var(--line);padding:14px 18px}header h1{margin:0;font-size:20px}header small{color:var(--muted)}main{max-width:1280px;margin:auto;padding:15px}.tabs{display:flex;gap:7px;overflow:auto;margin-bottom:14px}.tabs button{white-space:nowrap}.tab.active{background:var(--green);color:#04110a}button{border:0;border-radius:10px;background:#1c2c43;color:#fff;padding:10px 13px;font-weight:750;cursor:pointer}button:disabled{opacity:.45;cursor:not-allowed}.primary{background:var(--green);color:#04110a}.danger{background:var(--red)}.card{background:#101c2eeF;border:1px solid var(--line);border-radius:17px;padding:15px;margin-bottom:14px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.two{display:grid;grid-template-columns:1.25fr .75fr;gap:14px}label{display:block;color:var(--muted);font-size:12px;margin:9px 0 4px}input,select{width:100%;background:#081423;border:1px solid var(--line);color:#fff;border-radius:9px;padding:10px}input[type=color]{height:42px;padding:3px}.row{display:flex;gap:7px;flex-wrap:wrap}.muted{color:var(--muted);line-height:1.45}.videoBox{background:#000;border-radius:13px;overflow:hidden;position:relative}.videoBox video{display:block;width:100%;max-height:560px}.videoMax{position:absolute;right:10px;top:10px;z-index:5;background:#07111fcc;border:1px solid #ffffff33;padding:8px 10px;font-size:11px;border-radius:9px}.videoOverlay{display:block}.videoBox.focusMode{position:fixed;inset:0;z-index:9999;width:100vw;height:100dvh;background:#000;border-radius:0;display:flex;align-items:center;justify-content:center}.videoBox.focusMode video{width:100%;height:100%;max-height:none;object-fit:contain}.videoBox.focusMode .videoMax{display:none}.videoBox.focusMode .liveScore{top:12px}.videoOverlay{position:absolute;left:10px;right:10px;bottom:10px;z-index:6;background:#07111fd9;border:1px solid #ffffff25;border-radius:14px;padding:9px;backdrop-filter:blur(8px)}
-/* No modo de visualização maximizada, os controlos ficam ancorados no fundo e nunca no centro da imagem. */
-.videoBox.focusMode .videoOverlay{position:fixed!important;left:8px!important;right:8px!important;top:auto!important;bottom:8px!important;width:auto!important;height:auto!important;margin:0!important;z-index:10001!important;background:#07111f99!important;border:1px solid #ffffff20!important;border-radius:10px!important;padding:4px!important;backdrop-filter:blur(5px)!important;transform:none!important}.videoBox.focusMode .videoOverlayTitle{display:none!important}.videoBox.focusMode .videoOverlayButtons{display:grid!important;grid-template-columns:repeat(5,minmax(0,1fr))!important;gap:4px!important}.videoBox.focusMode .videoOverlayButtons button{min-height:42px!important;height:42px!important;padding:4px 2px!important;font-size:10px!important;border-radius:8px!important}.videoBox.focusMode .videoOverlay .videoMin{display:block!important;margin-top:4px!important;min-height:28px!important;height:28px!important;padding:3px!important;font-size:9px!important}.videoBox.focusMode .videoOverlayButtons .h{grid-column:auto!important}
-.videoBox.focusMode .videoOverlayTitle{display:none}
-.videoBox.focusMode .videoOverlayButtons{grid-template-columns:repeat(5,1fr);gap:4px}
-.videoBox.focusMode .videoOverlayButtons button{min-height:42px;padding:5px 3px;font-size:10px;border-radius:8px}
-.videoBox.focusMode .videoOverlayButtons .h{grid-column:auto}
-.videoBox.focusMode .videoMin{display:block;width:auto;margin:4px auto 0;padding:4px 10px;min-height:28px;font-size:10px;border-radius:7px;background:#26384fcc}
-.videoBox.focusMode .videoOverlayButtons{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px}
-.videoBox.focusMode .videoOverlayButtons button{min-height:44px;font-size:11px;padding:7px 4px}
-.videoBox.focusMode .videoOverlayTitle{font-size:10px;margin-bottom:5px}
-.videoBox.focusMode .videoMin{min-height:38px;margin-top:6px;font-size:10px;padding:7px}
-@media(max-width:780px) and (orientation:portrait){
-  .videoBox.focusMode .videoOverlayButtons{grid-template-columns:repeat(2,minmax(0,1fr))}
-  .videoBox.focusMode .videoOverlayButtons .h{grid-column:1/-1}
-}
-@media(max-width:780px) and (orientation:landscape){
-  .videoBox.focusMode .videoOverlay{left:6px;right:6px;bottom:max(6px,env(safe-area-inset-bottom));padding:6px;border-radius:12px}
-  .videoBox.focusMode .videoOverlayTitle{display:none}
-  .videoBox.focusMode .videoOverlayButtons{grid-template-columns:repeat(5,minmax(0,1fr));gap:5px}
-  .videoBox.focusMode .videoOverlayButtons button{min-height:42px;font-size:10px;padding:5px 2px}
-  .videoBox.focusMode .videoMin{min-height:30px;margin-top:5px;font-size:9px;padding:5px}
-}.videoOverlayTitle{font-size:11px;font-weight:900;text-align:center;margin-bottom:7px;color:#dce7f5}.videoOverlayButtons{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}.videoOverlayButtons button{min-height:43px;padding:7px 5px;font-size:11px;border-radius:9px;color:#fff;font-weight:900}.videoOverlayButtons .g{background:#16834b}.videoOverlayButtons .a{background:#9c2935}.videoOverlayButtons .d{background:#315d94}.videoOverlayButtons .o{background:#775a16}.videoOverlayButtons .h{background:#653c8f}.videoMin{display:none;width:100%;margin-top:7px;background:#26384f;border:1px solid #ffffff22}.videoBox.focusMode .videoOverlay{display:block}.videoBox.focusMode .videoMin{display:block}.boardPreview{aspect-ratio:16/9;background:#000;position:relative;display:grid;place-items:center;border-radius:13px;overflow:hidden}.board{position:absolute;top:4%;left:50%;transform:translateX(-50%);padding:8px 15px;border-radius:8px;white-space:nowrap;font-weight:850;font-size:clamp(11px,1.8vw,18px)}.centerScore{font-size:clamp(38px,7vw,74px);font-weight:950}.events{display:grid;gap:7px;max-height:360px;overflow:auto}.event{background:#0a1525;border:1px solid var(--line);border-radius:9px;padding:9px;display:flex;justify-content:space-between;align-items:center;gap:8px}.tag{font-size:11px;background:#1c3450;border-radius:999px;padding:3px 7px}.stat{background:#0a1525;border-radius:9px;padding:10px;color:#c6d2e2}.progress{height:9px;background:#08111d;border-radius:99px;overflow:hidden;margin-top:9px}.bar{height:100%;width:0;background:var(--green);transition:width .1s}.log{background:#050b13;border-radius:10px;padding:9px;max-height:170px;overflow:auto;font:12px ui-monospace,monospace;white-space:pre-wrap}.hidden{display:none}.small{font-size:12px}.fileItem{padding:9px;background:#0a1525;border:1px solid var(--line);border-radius:9px;margin-top:6px;cursor:pointer}.fileItem.sel{outline:2px solid var(--green)}.note{border-left:3px solid var(--green);padding-left:10px}.warning{border-left:3px solid #f0b94d;padding-left:10px}@media(max-width:780px){.grid,.two{grid-template-columns:1fr}main{padding:9px}.card{padding:12px}.board{font-size:10px}}
-.logoMini{width:28px;height:28px;object-fit:contain;border-radius:50%;vertical-align:middle}.livePanel{margin-top:10px;background:#0b1728;border:1px solid var(--line);border-radius:15px;padding:11px}.livePanelHead{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:9px}.livePanelHelp{font-size:11px;color:#8fa0b7}.liveButtons{display:grid;grid-template-columns:1fr 1fr;gap:8px}.liveButtons button{min-height:48px;font-size:13px;box-shadow:0 2px 10px #0005}.liveButtons .g{background:#18b86a}.liveButtons .a{background:#d94747}.liveButtons .d{background:#315b8f}.liveButtons .o{background:#7a5bb8}.liveButtons .h{background:#b37b20}.liveWide{grid-column:1/-1}.liveScore{position:absolute;top:8px;left:50%;transform:translateX(-50%);z-index:3;background:#07111fcc;border:1px solid #ffffff33;border-radius:999px;padding:5px 10px;font-weight:900;font-size:13px;pointer-events:none;white-space:nowrap}.liveHint{font-size:11px;color:#b8c5d8;margin:8px 2px 0;line-height:1.35}@media(max-width:780px){.livePanel{padding:10px}.livePanelHead{align-items:flex-start;flex-direction:column;gap:3px}.liveButtons button{min-height:52px;font-size:12px}.liveScore{font-size:12px}.videoBox video{max-height:70vh}.videoOverlay{left:7px;right:7px;bottom:62px;padding:7px}.videoOverlayButtons{grid-template-columns:repeat(2,1fr)}.videoOverlayButtons button{min-height:45px;font-size:11px}.videoOverlayButtons .h{grid-column:1/-1}.videoMax{font-size:10px;padding:7px 8px}.videoBox.focusMode .videoOverlay{bottom:max(6px,env(safe-area-inset-bottom))}}
-.aiActions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
-<style>
-@media (orientation:landscape) and (max-height:600px){
-  .videoBox.focusMode .videoOverlay{bottom:6px!important;left:6px!important;right:6px!important;padding:3px!important}
-  .videoBox.focusMode .videoOverlayButtons button{min-height:38px!important;height:38px!important;font-size:9px!important}
-  .videoBox.focusMode .videoOverlay .videoMin{height:24px!important;min-height:24px!important;font-size:8px!important;margin-top:3px!important}
-}
+:root{--bg:#07111f;--panel:#101c2e;--line:#253750;--text:#f7f9fc;--muted:#9eacc0;--green:#43e58a;--red:#f05252}
+*{box-sizing:border-box}html,body{margin:0;min-height:100%;background:radial-gradient(circle at 80% 0,#183052 0,#07111f 42%);color:var(--text);font:15px system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}body{overflow-x:hidden}header{position:sticky;top:0;z-index:20;background:#07111fee;backdrop-filter:blur(14px);border-bottom:1px solid var(--line);padding:14px 18px}header h1{margin:0;font-size:20px}header small{color:var(--muted)}main{max-width:1280px;margin:auto;padding:15px}.tabs{display:flex;gap:7px;overflow:auto;margin-bottom:14px}.tabs button{white-space:nowrap}.tab.active{background:var(--green);color:#04110a}button{border:0;border-radius:10px;background:#1c2c43;color:#fff;padding:10px 13px;font-weight:750;cursor:pointer;touch-action:manipulation}button:disabled{opacity:.45;cursor:not-allowed}.primary{background:var(--green);color:#04110a}.danger{background:var(--red)}.card{background:#101c2eef;border:1px solid var(--line);border-radius:17px;padding:15px;margin-bottom:14px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.two{display:grid;grid-template-columns:1.25fr .75fr;gap:14px}label{display:block;color:var(--muted);font-size:12px;margin:9px 0 4px}input,select{width:100%;background:#081423;border:1px solid var(--line);color:#fff;border-radius:9px;padding:10px}input[type=color]{height:42px;padding:3px}.row{display:flex;gap:7px;flex-wrap:wrap}.muted{color:var(--muted);line-height:1.45}.videoBox{background:#000;border-radius:13px;overflow:hidden;position:relative}.videoBox video{display:block;width:100%;max-height:560px;background:#000}.videoMax{position:absolute;right:10px;top:10px;z-index:9;background:#07111fd9;border:1px solid #ffffff40;padding:10px 12px;font-size:12px;border-radius:10px}.videoOverlay{position:absolute;left:8px;right:8px;bottom:8px;z-index:8;background:#07111fd9;border:1px solid #ffffff25;border-radius:12px;padding:7px;backdrop-filter:blur(7px);touch-action:manipulation}.videoOverlayTitle{font-size:10px;font-weight:900;text-align:center;margin-bottom:5px;color:#dce7f5}.videoOverlayButtons{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:5px}.videoOverlayButtons button{min-height:42px;padding:6px 4px;font-size:10px;border-radius:9px;color:#fff;font-weight:900}.videoOverlayButtons .g{background:#16834b}.videoOverlayButtons .a{background:#9c2935}.videoOverlayButtons .d{background:#315d94}.videoOverlayButtons .o{background:#775a16}.videoOverlayButtons .h{background:#653c8f}.videoMin{display:none;position:absolute;right:10px;top:10px;width:auto;margin:0;background:#07111fd9;border:1px solid #ffffff40;min-height:38px;padding:8px 11px;font-size:11px;z-index:12}.videoBox.focusMode{position:fixed;inset:0;z-index:99999;width:100vw;height:100dvh;background:#000;border-radius:0;display:flex;align-items:center;justify-content:center;overflow:hidden}.videoBox.focusMode video{width:100%;height:100%;max-height:none;object-fit:contain}.videoBox.focusMode .videoMax{display:none}.videoBox.focusMode .liveScore{top:max(10px,env(safe-area-inset-top));z-index:10002}.videoBox.focusMode .videoOverlay{position:absolute;left:8px;right:8px;bottom:max(8px,env(safe-area-inset-bottom));z-index:10003;padding:5px;background:#07111fa8;border-color:#ffffff1f;border-radius:10px}.videoBox.focusMode .videoOverlayTitle{display:none}.videoBox.focusMode .videoOverlayButtons{grid-template-columns:repeat(5,minmax(0,1fr));gap:4px}.videoBox.focusMode .videoOverlayButtons button{height:44px;min-height:44px;padding:4px 2px;font-size:10px;border-radius:8px}.videoBox.focusMode .videoMin{display:block}.videoBox video::-webkit-media-controls-fullscreen-button{display:none!important}.videoBox video::-webkit-media-controls-picture-in-picture-button{display:none!important}.boardPreview{aspect-ratio:16/9;background:#000;position:relative;display:grid;place-items:center;border-radius:13px;overflow:hidden}.board{position:absolute;top:4%;left:50%;transform:translateX(-50%);padding:8px 15px;border-radius:8px;white-space:nowrap;font-weight:850;font-size:clamp(11px,1.8vw,18px)}.centerScore{font-size:clamp(38px,7vw,74px);font-weight:950}.events{display:grid;gap:7px;max-height:360px;overflow:auto}.event{background:#0a1525;border:1px solid var(--line);border-radius:9px;padding:9px;display:flex;justify-content:space-between;align-items:center;gap:8px}.tag{font-size:11px;background:#1c3450;border-radius:999px;padding:3px 7px}.stat{background:#0a1525;border-radius:9px;padding:10px;color:#c6d2e2}.progress{height:9px;background:#08111d;border-radius:99px;overflow:hidden;margin-top:9px}.bar{height:100%;width:0;background:var(--green);transition:width .1s}.log{background:#050b13;border-radius:10px;padding:9px;max-height:170px;overflow:auto;font:12px ui-monospace,monospace;white-space:pre-wrap}.hidden{display:none}.small{font-size:12px}.fileItem{padding:9px;background:#0a1525;border:1px solid var(--line);border-radius:9px;margin-top:6px;cursor:pointer}.fileItem.sel{outline:2px solid var(--green)}.note{border-left:3px solid var(--green);padding-left:10px}.warning{border-left:3px solid #f0b94d;padding-left:10px}.livePanel{margin-top:10px;background:#0b1728;border:1px solid var(--line);border-radius:15px;padding:11px}.livePanelHead{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:9px}.livePanelHelp{font-size:11px;color:#8fa0b7}.liveButtons{display:grid;grid-template-columns:1fr 1fr;gap:8px}.liveButtons button{min-height:48px;font-size:13px;box-shadow:0 2px 10px #0005}.liveButtons .g{background:#18b86a}.liveButtons .a{background:#d94747}.liveButtons .d{background:#315b8f}.liveButtons .o{background:#7a5bb8}.liveButtons .h{background:#b37b20}.liveWide{grid-column:1/-1}.liveScore{position:absolute;top:8px;left:50%;transform:translateX(-50%);z-index:3;background:#07111fcc;border:1px solid #ffffff33;border-radius:999px;padding:5px 10px;font-weight:900;font-size:13px;pointer-events:none;white-space:nowrap}.liveHint{font-size:11px;color:#b8c5d8;margin:8px 2px 0;line-height:1.35}.aiCard{margin-top:10px;background:linear-gradient(180deg,#101d31,#0a1525);border:1px solid #2c4667;border-radius:16px;padding:12px}.aiHead{display:flex;align-items:center;justify-content:space-between;gap:10px}.aiHead>div{display:flex;align-items:center;gap:7px}.aiTag{background:#243d62}.aiSmall{font-size:10px;color:#8fa0b7}.aiStatus{font-size:12px;color:#c9d4e4;margin-top:7px}.aiProgress{margin-top:8px}.aiCandidates{display:grid;gap:7px;margin-top:9px;max-height:360px;overflow:auto}.aiCandidate{background:#081423;border:1px solid #253750;border-radius:11px;padding:9px;display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:9px}.aiScore{font-weight:900;font-size:13px}.aiTime{font-weight:850}.aiReason{font-size:10px;color:#8fa0b7;margin-top:2px}.aiActions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}.aiCandidate button{font-size:11px;padding:9px 11px}.aiCandidate .secondary{border:1px solid #42658f}.aiNote{font-size:10px;color:#8fa0b7;line-height:1.35;margin-top:9px;border-left:3px solid #43e58a;padding-left:8px}@media(max-width:780px){main{padding:9px}.card{padding:12px}.grid,.two{grid-template-columns:1fr}.videoBox video{max-height:70vh}.videoMax{font-size:11px;padding:9px 10px}.livePanel{padding:10px}.livePanelHead{align-items:flex-start;flex-direction:column;gap:3px}.liveButtons button{min-height:52px;font-size:12px}.aiHead{align-items:flex-start;flex-direction:column;gap:4px}.aiCandidate{grid-template-columns:auto 1fr}.aiActions{grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr}.aiCandidate button{width:100%;min-height:42px}.videoOverlay{left:6px;right:6px;bottom:6px;padding:6px}.videoOverlayButtons{grid-template-columns:repeat(2,minmax(0,1fr));gap:5px}.videoOverlayButtons .h{grid-column:1/-1}.videoOverlayButtons button{min-height:46px;font-size:11px}.videoBox.focusMode .videoOverlay{left:6px;right:6px;bottom:max(6px,env(safe-area-inset-bottom));padding:4px}.videoBox.focusMode .videoOverlayButtons{grid-template-columns:repeat(5,minmax(0,1fr));gap:4px}.videoBox.focusMode .videoOverlayButtons button{height:42px;min-height:42px;font-size:9px;padding:3px 1px}.videoBox.focusMode .videoMin{right:6px;top:max(6px,env(safe-area-inset-top));font-size:10px;padding:7px 9px;min-height:34px}}
+@media(max-width:780px) and (orientation:portrait){.videoBox.focusMode .videoOverlayButtons{grid-template-columns:repeat(5,minmax(0,1fr))}.videoBox.focusMode .videoOverlayButtons button{font-size:8px}}
 </style>
-</style>
-
-<style>
-.liveMarkers{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:10px}.liveMarkers button{min-height:52px;border:0;border-radius:12px;font-weight:900;font-size:14px;color:#fff;touch-action:manipulation}.liveMarkers .g{background:#16834b}.liveMarkers .a{background:#9c2935}.liveMarkers .d{background:#315d94}.liveMarkers .o{background:#775a16}.liveMarkers .h{background:#653c8f}.liveClock{text-align:center;font-size:18px;font-weight:900;margin-top:10px}@media(min-width:700px){.liveMarkers{grid-template-columns:repeat(5,1fr)}}
-.aiCard{margin-top:10px;background:linear-gradient(180deg,#101d31,#0a1525);border:1px solid #2c4667;border-radius:16px;padding:12px}.aiHead{display:flex;align-items:center;justify-content:space-between;gap:10px}.aiHead>div{display:flex;align-items:center;gap:7px}.aiTag{background:#243d62}.aiSmall{font-size:10px;color:#8fa0b7}.aiStatus{font-size:12px;color:#c9d4e4;margin-top:7px}.aiProgress{margin-top:8px}.aiCandidates{display:grid;gap:7px;margin-top:9px;max-height:360px;overflow:auto}.aiCandidate{background:#081423;border:1px solid #253750;border-radius:11px;padding:9px;display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:9px}.aiScore{font-weight:900;font-size:13px}.aiTime{font-weight:850}.aiReason{font-size:10px;color:#8fa0b7;margin-top:2px}.aiCandidate button{font-size:11px;padding:9px 11px}.aiCandidate .secondary{border:1px solid #42658f}.aiNote{font-size:10px;color:#8fa0b7;line-height:1.35;margin-top:9px;border-left:3px solid #43e58a;padding-left:8px}@media(max-width:780px){.aiHead{align-items:flex-start;flex-direction:column;gap:4px}.aiCandidate{grid-template-columns:auto 1fr}.aiCandidate button{grid-column:2;justify-self:start}}
-</style>
-
-/* MARCAÇÃO MANUAL DURANTE A VISUALIZAÇÃO — otimizado para iPhone/Android */
-.videoOverlay{left:8px;right:8px;bottom:8px;padding:7px;background:#07111fe8;z-index:8;touch-action:manipulation}
-.videoOverlayTitle{font-size:10px;margin-bottom:6px}
-.videoOverlayButtons{grid-template-columns:repeat(5,1fr);gap:5px}
-.videoOverlayButtons button{min-height:42px;font-size:10px;padding:6px 4px;touch-action:manipulation}
-.videoBox video::-webkit-media-controls-fullscreen-button{display:none!important}
-.videoBox video::-webkit-media-controls-picture-in-picture-button{display:none!important}
-@media(max-width:780px){
-  .videoOverlay{left:6px;right:6px;bottom:6px;padding:6px}
-  .videoOverlayButtons{grid-template-columns:repeat(2,1fr)}
-  .videoOverlayButtons .h{grid-column:1/-1}
-  .videoOverlayButtons button{min-height:46px;font-size:11px}
-  .videoMin{font-size:11px;min-height:42px}
-}
 </head>
 <body>
 <script>
@@ -150,17 +100,6 @@
   <div class="aiNote">💡 A deteção é baseada no movimento da imagem e funciona no próprio iPhone, Android ou PC. Vê cada lance individualmente antes de decidir se o adicionas aos highlights. Não usa OpenAI nem requer créditos.</div>
 </div>
 
-<div class="aiCard" style="margin-top:10px">
-  <div class="aiHead">
-    <div><b>🧠 Análise visual de futebol</b><span class="tag aiTag">IA local · experimental</span></div>
-    <span class="aiSmall">Modelo descarregado e executado no dispositivo</span>
-  </div>
-  <p class="muted small">Depois de encontrares os candidatos, esta camada visual compara imagens do lance com conceitos de futebol. Pode sugerir <b>golo, grande defesa, remate, corte, passe ou jogada</b>. Não substitui um árbitro e ainda está em fase experimental.</p>
-  <div class="row"><button id="visionAnalyze" class="primary">🧠 Classificar candidatos com IA local</button></div>
-  <div class="progress aiProgress"><div id="visionBar" class="bar"></div></div>
-  <div id="visionStatus" class="aiStatus">Primeiro executa a deteção automática para criar candidatos.</div>
-  <div class="aiNote">💡 O vídeo continua no teu dispositivo. A primeira utilização descarrega o modelo MobileCLIP do Hugging Face; depois o navegador pode reutilizá-lo em cache. A inferência é feita localmente com Transformers.js/ONNX.</div>
-</div>
 
 <div class="row" style="margin-top:8px"><button id="prev">◀ Anterior</button><button id="next">Seguinte ▶</button></div>
 </div>
@@ -314,9 +253,11 @@ function markCurrent(kind){
 document.querySelectorAll('.mark').forEach(b=>b.onclick=()=>markCurrent(b.dataset.kind));
 document.querySelectorAll('.liveMark').forEach(b=>b.onclick=()=>markCurrent(b.dataset.kind));
 const videoBox=document.querySelector('.videoBox');
-$('videoMax').onclick=()=>{videoBox.classList.add('focusMode');document.body.style.overflow='hidden';};
-$('videoMin').onclick=()=>{videoBox.classList.remove('focusMode');document.body.style.overflow='';};
-document.addEventListener('keydown',e=>{if(e.key==='Escape'&&videoBox.classList.contains('focusMode')){$('videoMin').click()}});
+function enterFocus(){videoBox.classList.add('focusMode');document.body.style.overflow='hidden';document.documentElement.style.overflow='hidden';}
+function exitFocus(){videoBox.classList.remove('focusMode');document.body.style.overflow='';document.documentElement.style.overflow='';}
+$('videoMax').onclick=enterFocus;
+$('videoMin').onclick=exitFocus;
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&videoBox.classList.contains('focusMode')){exitFocus()}});
 $('player').addEventListener('timeupdate',()=>{if($('liveClock'))$('liveClock').textContent=fmt($('player').currentTime||0)});
 document.addEventListener('keydown',e=>{if(['INPUT','SELECT','TEXTAREA'].includes(document.activeElement?.tagName))return;if(!videos.length)return;const k=e.key.toLowerCase();const map={g:'Golo nosso',a:'Golo adversário',d:'Defesa',o:'Oportunidade',h:'Destaque'};if(map[k]){e.preventDefault();markCurrent(map[k])}});
 function renderEvents(){let e=$('eventsList');if(!marks.length){e.innerHTML='<span class="muted">Nenhum momento marcado.</span>';return}
@@ -566,88 +507,6 @@ $('player').addEventListener('loadedmetadata',()=>{
   previewEnd=null;
   if($('aiStatus'))$('aiStatus').textContent='Vídeo pronto para deteção automática local.';
 });
-
-// ---------- IA VISUAL LOCAL / MOBILECLIP ----------
-let visionPipe=null;
-let visionLoading=false;
-const visionLabels=[
-  'a soccer goal being scored',
-  'a goalkeeper making a great save',
-  'a dangerous soccer shot',
-  'a soccer interception or defensive tackle',
-  'a great soccer pass or assist',
-  'a dangerous attacking soccer play',
-  'a normal soccer game moment',
-  'a referee giving a card or calling a foul'
-];
-const visionNames=['⚽ Golo','🧤 Grande defesa','🎯 Remate perigoso','🛡️ Corte / interceção','🅰️ Bom passe / assistência','🔥 Boa jogada','⭐ Destaque','🚩 Falta / cartão'];
-
-async function getVisionPipe(){
-  if(visionPipe)return visionPipe;
-  if(visionLoading)throw new Error('A IA visual já está a carregar.');
-  visionLoading=true;
-  try{
-    const mod=await import('https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.8.1/+esm');
-    mod.env.allowLocalModels=false; mod.env.allowRemoteModels=true; mod.env.useBrowserCache=true;
-    const opts={dtype:'q8'};
-    if(mod.env.IS_WEBGPU_AVAILABLE)opts.device='webgpu';
-    visionPipe=await mod.pipeline('zero-shot-image-classification','Xenova/mobileclip_s0',opts);
-    return visionPipe;
-  }finally{visionLoading=false;}
-}
-
-function visionBest(results){
-  if(!results||!results.length)return null;
-  const best=results[0], idx=visionLabels.indexOf(best.label);
-  return idx>=0?{idx,score:best.score,label:visionNames[idx]}:null;
-}
-
-async function classifyFrame(pipe,video,time){
-  const c=document.createElement('canvas');c.width=320;c.height=180;
-  const x=c.getContext('2d');
-  await seek(video,Math.max(0,Math.min(time,video.duration||time)));
-  x.drawImage(video,0,0,c.width,c.height);
-  const mod=await import('https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.8.1/+esm');
-  const image=await mod.RawImage.read(c.toDataURL('image/jpeg',0.72));
-  const out=await pipe(image,visionLabels,{topk:visionLabels.length});
-  return visionBest(out);
-}
-
-async function visionAnalyze(){
-  if(!videos.length)return alert('Carrega primeiro um vídeo.');
-  if(!aiCandidates.length)return alert('Executa primeiro “Detetar Highlights automaticamente”.');
-  const btn=$('visionAnalyze'),status=$('visionStatus'),bar=$('visionBar');
-  btn.disabled=true;bar.style.width='2%';
-  try{
-    status.textContent='A carregar a IA visual local… (primeira vez pode demorar)';
-    const pipe=await getVisionPipe();
-    const source=videos[current];
-    const v=document.createElement('video');v.src=source.url;v.muted=true;v.playsInline=true;v.preload='metadata';
-    await waitEvent(v,'loadedmetadata');
-    const total=aiCandidates.length;
-    for(let i=0;i<total;i++){
-      const c=aiCandidates[i], votes=[];
-      for(const off of [-1.5,0,1.5]){try{const r=await classifyFrame(pipe,v,c.time+off);if(r)votes.push(r);}catch(e){}}
-      if(votes.length){
-        const sums={};votes.forEach(r=>sums[r.idx]=(sums[r.idx]||0)+r.score);
-        const bestIdx=Object.keys(sums).sort((a,b)=>sums[b]-sums[a])[0];
-        const avg=sums[bestIdx]/votes.length;
-        c.label=visionNames[bestIdx];
-        c.score=Math.round(Math.max(c.score*0.45,Math.min(96,45+avg*45)));
-        c.reason='Sugestão visual local baseada em 3 imagens do lance';
-      }
-      bar.style.width=Math.round(((i+1)/total)*100)+'%';
-      status.textContent=`A classificar lance ${i+1}/${total}…`;
-      aiRenderCandidates();
-      await new Promise(r=>setTimeout(r,0));
-    }
-    status.textContent='Classificação concluída. Confirma cada lance antes de o adicionar.';
-  }catch(e){
-    console.error(e);status.textContent='Não foi possível carregar a IA visual: '+e.message;
-    alert('A IA visual não conseguiu iniciar neste dispositivo. A deteção local por movimento continua disponível.');
-  }finally{btn.disabled=false;}
-}
-$('visionAnalyze').onclick=visionAnalyze;
 
 function projectData(){
  return {
