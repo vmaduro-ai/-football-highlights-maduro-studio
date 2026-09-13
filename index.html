@@ -347,143 +347,6 @@ async function renderFinal(){
 $('renderBtn').onclick=renderFinal;$('mp4Btn').onclick=convertToMP4;
 
 
-// ---------- IA LOCAL / DETEÇÃO INTELIGENTE ----------
-let aiCandidates=[];
-
-function aiTime(t){return fmt(t)}
-function clamp(n,a,b){return Math.max(a,Math.min(b,n))}
-
-function aiRenderCandidates(){
-  const box=$('aiCandidates');
-  if(!aiCandidates.length){
-    box.innerHTML='<span class="muted">Ainda não existem candidatos.</span>';
-    return;
-  }
-  box.innerHTML=aiCandidates.map((c,i)=>`
-    <div class="aiCandidate">
-      <div class="aiScore">${Math.round(c.score)}%</div>
-      <div>
-        <div class="aiTime">${aiTime(c.time)} · ${esc(c.label)}</div>
-        <div class="aiReason">${esc(c.reason)}</div>
-      </div>
-      <button class="primary" data-ai-add="${i}">➕ Adicionar</button>
-    </div>`).join('');
-  box.querySelectorAll('[data-ai-add]').forEach(b=>b.onclick=()=>{
-    const c=aiCandidates[+b.dataset.aiAdd];
-    if(!c)return;
-    // Candidate starts as a generic highlight. User can change/delete it afterwards.
-    marks.push({kind:c.label,time:c.time,video:current,scorer:'',assist:'',ai:true});
-    marks.sort((a,b)=>a.video-b.video||a.time-b.time);
-    refresh();
-    aiCandidates.splice(+b.dataset.aiAdd,1);
-    aiRenderCandidates();
-  });
-}
-
-function aiClear(){
-  aiCandidates=[];
-  aiRenderCandidates();
-  if($('aiBar'))$('aiBar').style.width='0%';
-  if($('aiStatus'))$('aiStatus').textContent='Candidatos limpos.';
-}
-
-async function aiAnalyzeVideo(){
-  if(!videos.length)return alert('Carrega primeiro um vídeo.');
-  const source=videos[current];
-  const status=$('aiStatus'), bar=$('aiBar');
-  $('aiAnalyze').disabled=true;
-  aiCandidates=[];
-  aiRenderCandidates();
-  status.textContent='A preparar análise local…';
-  bar.style.width='2%';
-
-  const v=document.createElement('video');
-  v.src=source.url; v.muted=true; v.playsInline=true; preload='metadata';
-  await waitEvent(v,'loadedmetadata');
-  if(!isFinite(v.duration)||v.duration<=0)throw new Error('Duração do vídeo indisponível.');
-
-  const canvas=document.createElement('canvas');
-  const w=160,h=90; canvas.width=w;canvas.height=h;
-  const ctx=canvas.getContext('2d',{willReadFrequently:true});
-
-  // Sampling density is deliberately moderate so it works on iPhone as well.
-  const step=v.duration>900?3:v.duration>300?2:1.5;
-  const samples=[];
-  let previous=null;
-
-  for(let t=0;t<v.duration;t+=step){
-    await seek(v,t);
-    ctx.drawImage(v,0,0,w,h);
-    const data=ctx.getImageData(0,0,w,h).data;
-    let motion=0;
-    if(previous){
-      let diff=0;
-      // Sample every 4th pixel to keep mobile CPUs responsive.
-      for(let p=0;p<data.length;p+=16){
-        diff += Math.abs(data[p]-previous[p]) + Math.abs(data[p+1]-previous[p+1]) + Math.abs(data[p+2]-previous[p+2]);
-      }
-      motion=diff/(data.length/16*3*255);
-    }
-    previous=data;
-    samples.push({t,motion});
-    bar.style.width=Math.round((t/v.duration)*70)+'%';
-    status.textContent=`A analisar vídeo… ${Math.round((t/v.duration)*100)}%`;
-    await new Promise(r=>setTimeout(r,0));
-  }
-
-  // Detect peaks above the local baseline, then merge nearby peaks.
-  const vals=samples.map(x=>x.motion);
-  const sorted=[...vals].sort((a,b)=>a-b);
-  const q=sorted[Math.floor(sorted.length*0.78)]||0.12;
-  const threshold=Math.max(q,0.07);
-  const peaks=[];
-  for(let i=1;i<samples.length-1;i++){
-    const m=samples[i].motion;
-    if(m>=threshold && m>=samples[i-1].motion && m>=samples[i+1].motion){
-      peaks.push({t:samples[i].t,m});
-    }
-  }
-  peaks.sort((a,b)=>b.m-a.m);
-
-  // Keep well-separated candidates; up to 20 per video.
-  const chosen=[];
-  for(const p of peaks){
-    if(chosen.every(x=>Math.abs(x.t-p.t)>8)){
-      chosen.push(p);
-      if(chosen.length>=20)break;
-    }
-  }
-  chosen.sort((a,b)=>a.t-b.t);
-
-  aiCandidates=chosen.map(p=>{
-    const confidence=clamp(55 + (p.m-threshold)*180,55,96);
-    return {
-      time:+p.t.toFixed(2),
-      score:confidence,
-      label:'Destaque',
-      reason:'Pico de movimento/ação detectado automaticamente'
-    };
-  });
-
-  bar.style.width='100%';
-  status.textContent=aiCandidates.length
-    ? `Análise concluída: ${aiCandidates.length} candidatos encontrados.`
-    : 'Não foram encontrados picos de ação suficientemente fortes.';
-  aiRenderCandidates();
-  $('aiAnalyze').disabled=false;
-}
-
-$('aiAnalyze').onclick=async()=>{
-  try{await aiAnalyzeVideo()}catch(e){
-    $('aiStatus').textContent='Erro na análise: '+e.message;
-    $('aiAnalyze').disabled=false;
-  }
-};
-$('aiClear').onclick=aiClear;
-$('player').addEventListener('loadedmetadata',()=>{
-  if($('aiStatus'))$('aiStatus').textContent='Vídeo pronto para análise IA.';
-});
-
 function projectData(){
  return {
   home:$('home').value,away:$('away').value,competition:$('competition').value,date:$('date').value,matchType:$('matchType').value,
@@ -505,7 +368,7 @@ $('resetProject').onclick=()=>{if(confirm('Criar um novo jogo? Os vídeos escolh
 
 refresh();
 </script>
-<!-- IA AUTOMÁTICA ESTÁVEL -->
+<!-- IA AUTOMÁTICA ESTÁVEL — ÚNICO MÓDULO -->
 <section id="v13-ai" style="margin:20px auto;max-width:1100px;padding:18px;border:1px solid #ddd;border-radius:16px;background:#fff;color:#222">
 <h2 style="margin:0">🧠 IA de Highlights — AUTOMÁTICA</h2>
 <p style="color:#666">Deteção local de ação → análise semântica por visão → confirmação → highlight</p>
@@ -518,27 +381,51 @@ refresh();
 <button id="aiSave">💾 Guardar</button><button id="aiTest">🔌 Testar ligação</button><button id="aiAnalyze" class="primary">🤖 ANALISAR VÍDEO COM IA</button><button id="aiClear">🧹 Limpar</button>
 </div>
 <div style="height:9px;background:#e9edf2;border-radius:99px;overflow:hidden;margin-top:14px"><div id="aiBar" style="height:100%;width:0;background:#43e58a"></div></div>
-<div id="aiStatus" style="margin-top:10px;color:#555">Escolhe um vídeo no separador “Vídeos” e carrega em “ANALISAR VÍDEO COM IA”.</div>
+<div id="aiStatus" style="margin-top:10px;color:#555">Vídeo carregado. Pronto para análise IA.</div>
 <div id="aiCandidates" style="margin-top:12px;display:grid;gap:9px"></div>
-<p style="font-size:11px;color:#666;line-height:1.4;border-left:3px solid #43e58a;padding-left:8px">O vídeo inteiro não é enviado. Primeiro procuramos localmente picos de ação e só enviamos imagens dos momentos candidatos para a IA.</p>
+<p style="font-size:11px;color:#666;line-height:1.4;border-left:3px solid #43e58a;padding-left:8px">O vídeo inteiro não é enviado. Procuramos localmente picos de ação e enviamos apenas imagens dos momentos candidatos para a IA.</p>
 </section>
 <script>
 (()=>{
-const $v=id=>document.getElementById(id),backend=$v('aiBackendUrl'),pre=$v('aiPre'),post=$v('aiPost'),status=$v('aiStatus'),bar=$v('aiBar'),list=$v('aiCandidates'),KEY='fhms_ai_config';
-try{const c=JSON.parse(localStorage.getItem(KEY)||'{}');backend.value=c.backend||'https://maduro-studio-ai.onrender.com';pre.value=c.pre??8;post.value=c.post??8}catch{backend.value='https://maduro-studio-ai.onrender.com'}
-const cfg=()=>localStorage.setItem(KEY,JSON.stringify({backend:backend.value.trim().replace(/\/$/,''),pre:Number(pre.value)||8,post:Number(post.value)||8}));
-$v('aiSave').onclick=()=>{cfg();status.textContent='✓ Configuração guardada neste dispositivo.'};
-$v('aiClear').onclick=()=>{list.innerHTML='';bar.style.width='0%';status.textContent='Candidatos limpos.'};
-$v('aiTest').onclick=async()=>{const u=backend.value.trim().replace(/\/$/,'');if(!u){status.textContent='⚠️ Introduz o URL do backend.';return}status.textContent='🔄 A testar ligação…';try{const r=await fetch(u+'/',{method:'GET'});const j=await r.json();if(!r.ok)throw Error('HTTP '+r.status);status.textContent='✅ Backend online: '+(j.service||'Football Highlights Maduro Studio AI')+' · '+(j.model||'modelo configurado')}catch(e){status.textContent='❌ Falha na ligação: '+e.message}};
-const sleep=ms=>new Promise(r=>setTimeout(r,ms));
-function seek(v,t){return new Promise((res,rej)=>{let d=false;const ok=()=>{if(d)return;d=true;cl();res()},bad=()=>{if(d)return;d=true;cl();rej(Error('Não foi possível procurar o vídeo.'))},cl=()=>{v.removeEventListener('seeked',ok);v.removeEventListener('error',bad)};v.addEventListener('seeked',ok,{once:true});v.addEventListener('error',bad,{once:true});v.currentTime=Math.max(0,Math.min(t,v.duration||t))})}
-function meta(v){return new Promise((res,rej)=>{if(v.readyState>=1&&isFinite(v.duration))return res();const ok=()=>{cl();res()},bad=()=>{cl();rej(Error('Duração do vídeo indisponível.'))},cl=()=>{v.removeEventListener('loadedmetadata',ok);v.removeEventListener('error',bad)};v.addEventListener('loadedmetadata',ok,{once:true});v.addEventListener('error',bad,{once:true})})}
-function label(t){return ({goal_home:'⚽ Golo nosso',goal_away:'⚽ Golo adversário',save:'🧤 Defesa',chance:'🎯 Oportunidade',highlight:'⭐ Destaque'})[t]||'⭐ Destaque'}
-function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
-function render(events){if(!events.length){list.innerHTML='<span style="color:#666">A IA não encontrou momentos com confiança suficiente.</span>';return}list.innerHTML=events.map((e,i)=>{const pct=Math.round(Math.max(0,Math.min(1,Number(e.confidence)||0))*100);return `<div data-i="${i}" style="padding:12px;border:1px solid #ddd;border-radius:12px;background:#fafafa;display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap"><div><b>${label(e.type)}</b> · ${Number(e.time).toFixed(1)}s · ${pct}%<div style="font-size:13px;color:#666;margin-top:3px">${esc(e.reason||'')}</div></div><div><button data-c="${i}">✅ Confirmar</button> <button data-x="${i}">✕ Ignorar</button></div></div>`}).join('');list.querySelectorAll('[data-c]').forEach(b=>b.onclick=()=>{const e=events[+b.dataset.c];window.dispatchEvent(new CustomEvent('fhms-ai-confirm',{detail:e}));b.disabled=true;b.closest('[data-i]').style.opacity='.55';status.textContent='✓ Momento confirmado: '+label(e.type)});list.querySelectorAll('[data-x]').forEach(b=>b.onclick=()=>b.closest('[data-i]').remove())}
-async function analyze(){if(!Array.isArray(videos)||!videos.length){const p=$v('player');if(!(p.currentSrc||p.src)){alert('Carrega primeiro um vídeo no separador “Vídeos”.');return}}const u=backend.value.trim().replace(/\/$/,'');if(!u){alert('Introduz primeiro o URL do backend.');return}cfg();const source=(Array.isArray(videos)&&videos[current])||{name:'Vídeo atual',url:($v('player').currentSrc||$v('player').src)};if(!source.url){alert('Carrega primeiro um vídeo no separador “Vídeos”.');return}const v=document.createElement('video');v.src=source.url;v.muted=true;v.playsInline=true;v.preload='metadata';$v('aiAnalyze').disabled=true;list.innerHTML='';bar.style.width='2%';status.textContent='⏳ A preparar o vídeo…';try{await meta(v);if(!isFinite(v.duration)||v.duration<=0)throw Error('Duração do vídeo indisponível.');const can=document.createElement('canvas'),ctx=can.getContext('2d',{willReadFrequently:true});const step=v.duration>900?4:v.duration>300?2.5:1.5,s=[];let prev=null;for(let t=0;t<v.duration;t+=step){await seek(v,t);can.width=160;can.height=90;ctx.drawImage(v,0,0,160,90);const d=ctx.getImageData(0,0,160,90).data;let m=0;if(prev){let diff=0;for(let p=0;p<d.length;p+=16)diff+=Math.abs(d[p]-prev[p])+Math.abs(d[p+1]-prev[p+1])+Math.abs(d[p+2]-prev[p+2]);m=diff/(d.length/16*3*255)}prev=d;s.push({t,m});bar.style.width=Math.round(t/v.duration*45)+'%';status.textContent='🔎 A procurar ação… '+Math.round(t/v.duration*100)+'%';await sleep(0)}const vals=s.map(x=>x.m),sorted=[...vals].sort((a,b)=>a-b),th=Math.max(sorted[Math.floor(sorted.length*.78)]||.07,.07),peaks=[];for(let i=1;i<s.length-1;i++)if(s[i].m>=th&&s[i].m>=s[i-1].m&&s[i].m>=s[i+1].m)peaks.push(s[i]);peaks.sort((a,b)=>b.m-a.m);const chosen=[];for(const p of peaks)if(chosen.every(x=>Math.abs(x.t-p.t)>8)){chosen.push(p);if(chosen.length>=6)break}chosen.sort((a,b)=>a.t-b.t);if(!chosen.length){bar.style.width='100%';status.textContent='ℹ️ Não encontrei picos de ação suficientes.';return}status.textContent='🧠 A IA está a analisar '+chosen.length+' momentos…';bar.style.width='50%';const frames=[];for(let i=0;i<chosen.length;i++){const t=chosen[i].t;for(const tt of [Math.max(0,t-1.2),t,Math.min(v.duration-.05,t+1.2)]){await seek(v,tt);can.width=480;can.height=270;ctx.drawImage(v,0,0,480,270);frames.push({time:+tt.toFixed(2),image:can.toDataURL('image/jpeg',.72)})}bar.style.width=50+Math.round((i+1)/chosen.length*30)+'%'}const r=await fetch(u+'/analyze',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({frames:frames.slice(0,18),context:{home:typeof home!=='undefined'?home.value:'',away:typeof away!=='undefined'?away.value:'',video:source.name,duration:v.duration}})});const data=await r.json();if(!r.ok)throw Error(data.error||'HTTP '+r.status);const events=(Array.isArray(data.events)?data.events:[]).map(e=>({...e,time:Number(e.time),confidence:Number(e.confidence)||0})).filter(e=>Number.isFinite(e.time)).sort((a,b)=>a.time-b.time);bar.style.width='100%';status.textContent=events.length?'✅ IA concluiu. Confirma os candidatos.':'ℹ️ A IA não encontrou eventos com confiança suficiente.';render(events)}catch(e){bar.style.width='0%';status.textContent='❌ Erro na análise: '+e.message}finally{$v('aiAnalyze').disabled=false;v.remove()}}
-$v('aiAnalyze').onclick=analyze;
-window.addEventListener('fhms-ai-confirm',ev=>{const e=ev.detail||{},map={goal_home:'Golo nosso',goal_away:'Golo adversário',save:'Defesa',chance:'Oportunidade',highlight:'Destaque'},kind=map[e.type]||'Destaque';if(typeof marks!=='undefined'&&Array.isArray(marks)){const t=Number(e.time);if(!marks.some(m=>m.video===current&&Math.abs(Number(m.time)-t)<1.5&&m.ai)){marks.push({kind,time:+t.toFixed(2),video:current,scorer:'',assist:'',ai:true,semantic:true});marks.sort((a,b)=>a.video-b.video||a.time-b.time);if(typeof refresh==='function')refresh()}}});
+const $=id=>document.getElementById(id);
+const backend=$('aiBackendUrl'), pre=$('aiPre'), post=$('aiPost'), status=$('aiStatus'), bar=$('aiBar'), list=$('aiCandidates'), btn=$('aiAnalyze');
+const KEY='fhms_ai_config';
+let events=[];
+function save(){localStorage.setItem(KEY,JSON.stringify({backend:backend.value.trim().replace(/\/$/,''),pre:Number(pre.value)||8,post:Number(post.value)||8}));}
+try{const c=JSON.parse(localStorage.getItem(KEY)||'{}');backend.value=c.backend||'https://maduro-studio-ai.onrender.com';pre.value=c.pre??8;post.value=c.post??8;}catch{backend.value='https://maduro-studio-ai.onrender.com';}
+$('aiSave').onclick=()=>{save();status.textContent='✓ Configuração guardada.';};
+$('aiClear').onclick=()=>{events=[];list.innerHTML='';bar.style.width='0%';status.textContent='Candidatos limpos.';};
+$('aiTest').onclick=async()=>{const u=backend.value.trim().replace(/\/$/,'');if(!u){status.textContent='⚠️ Introduz o URL do backend.';return;}status.textContent='🔌 A testar ligação…';try{const r=await fetch(u+'/');const j=await r.json();if(!r.ok)throw Error(j.error||'HTTP '+r.status);status.textContent='✅ Backend online: '+(j.service||'Football Highlights Maduro Studio AI')+' · '+(j.model||'modelo configurado');}catch(e){status.textContent='❌ Falha na ligação: '+e.message;}};
+function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
+function seek(v,t){return new Promise((resolve,reject)=>{const target=Math.max(0,Math.min(t,Math.max(0,(v.duration||t)-0.05)));if(Math.abs((v.currentTime||0)-target)<0.05){resolve();return;}let done=false;const clean=()=>{v.removeEventListener('seeked',ok);v.removeEventListener('error',bad);};const ok=()=>{if(done)return;done=true;clean();resolve();};const bad=()=>{if(done)return;done=true;clean();reject(Error('Não foi possível procurar no vídeo.'));};v.addEventListener('seeked',ok,{once:true});v.addEventListener('error',bad,{once:true});try{v.currentTime=target;}catch(e){bad();}});}
+function label(t){return ({goal_home:'⚽ Golo nosso',goal_away:'🔴 Golo adversário',save:'🧤 Defesa',chance:'🎯 Oportunidade',highlight:'⭐ Destaque'})[t]||'⭐ Destaque';}
+function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);}
+function render(){if(!events.length){list.innerHTML='<span style="color:#666">A IA não encontrou momentos com confiança suficiente.</span>';return;}list.innerHTML=events.map((e,i)=>{const pct=Math.round(Math.max(0,Math.min(1,Number(e.confidence)||0))*100);return `<div style="padding:12px;border:1px solid #ddd;border-radius:12px;background:#fafafa;display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap"><div><b>${label(e.type)}</b> · ${Number(e.time).toFixed(1)}s · ${pct}%<div style="font-size:13px;color:#666;margin-top:3px">${esc(e.reason)}</div></div><div><button data-ok="${i}">✅ Confirmar</button> <button data-no="${i}">✕ Ignorar</button></div></div>`}).join('');list.querySelectorAll('[data-ok]').forEach(b=>b.onclick=()=>{const e=events[+b.dataset.ok];window.dispatchEvent(new CustomEvent('fhms-ai-confirm',{detail:e}));b.disabled=true;b.closest('[data-ok]')?.removeAttribute('data-ok');b.textContent='✓ Confirmado';status.textContent='✓ Momento confirmado: '+label(e.type);});list.querySelectorAll('[data-no]').forEach(b=>b.onclick=()=>b.closest('div[style*="padding:12px"]')?.remove());}
+async function analyze(){
+ const player=$('player');
+ if(!player || !player.src){status.textContent='⚠️ Primeiro carrega e seleciona um vídeo no separador “Vídeos”.';return;}
+ const u=backend.value.trim().replace(/\/$/,''); if(!u){status.textContent='⚠️ Introduz o URL do backend.';return;}
+ save(); btn.disabled=true; events=[]; list.innerHTML=''; bar.style.width='1%';
+ const oldTime=player.currentTime||0;
+ try{
+  if(player.readyState<1){await new Promise((res,rej)=>{const ok=()=>{clean();res();},bad=()=>{clean();rej(Error('O vídeo não ficou disponível.'));},clean=()=>{player.removeEventListener('loadedmetadata',ok);player.removeEventListener('error',bad)};player.addEventListener('loadedmetadata',ok,{once:true});player.addEventListener('error',bad,{once:true});});}
+  if(!isFinite(player.duration)||player.duration<=0)throw Error('Duração do vídeo indisponível.');
+  const canvas=document.createElement('canvas');canvas.width=160;canvas.height=90;const ctx=canvas.getContext('2d',{willReadFrequently:true});
+  const step=player.duration>900?4:player.duration>300?2.5:1.5;const samples=[];let prev=null;
+  status.textContent='🔎 A procurar momentos de ação…';
+  for(let t=0;t<player.duration;t+=step){await seek(player,t);ctx.drawImage(player,0,0,160,90);const d=ctx.getImageData(0,0,160,90).data;let m=0;if(prev){let diff=0;for(let p=0;p<d.length;p+=16)diff+=Math.abs(d[p]-prev[p])+Math.abs(d[p+1]-prev[p+1])+Math.abs(d[p+2]-prev[p+2]);m=diff/(d.length/16*3*255);}prev=d;samples.push({t,m});bar.style.width=Math.round(t/player.duration*45)+'%';await sleep(0);}
+  const vals=samples.map(x=>x.m), sorted=[...vals].sort((a,b)=>a-b), threshold=Math.max(sorted[Math.floor(sorted.length*.78)]||.07,.07), peaks=[];
+  for(let i=1;i<samples.length-1;i++)if(samples[i].m>=threshold&&samples[i].m>=samples[i-1].m&&samples[i].m>=samples[i+1].m)peaks.push(samples[i]);
+  peaks.sort((a,b)=>b.m-a.m);const chosen=[];for(const p of peaks)if(chosen.every(x=>Math.abs(x.t-p.t)>8)){chosen.push(p);if(chosen.length>=6)break;}chosen.sort((a,b)=>a.t-b.t);
+  if(!chosen.length){bar.style.width='100%';status.textContent='ℹ️ Não encontrei picos de ação suficientes.';return;}
+  status.textContent=`🧠 A IA está a analisar ${chosen.length} momentos…`;const frames=[];canvas.width=480;canvas.height=270;
+  for(let i=0;i<chosen.length;i++){const t=chosen[i].t;for(const tt of [Math.max(0,t-1.2),t,Math.min(player.duration-.05,t+1.2)]){await seek(player,tt);ctx.drawImage(player,0,0,480,270);frames.push({time:+tt.toFixed(2),image:canvas.toDataURL('image/jpeg',.72)});}bar.style.width=(50+Math.round((i+1)/chosen.length*30))+'%';}
+  const r=await fetch(u+'/analyze',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({frames:frames.slice(0,18),context:{home:$('home')?.value||'',away:$('away')?.value||'',video:(typeof videos!=='undefined'&&videos[current])?videos[current].name:'Vídeo',duration:player.duration}})});
+  const data=await r.json();if(!r.ok)throw Error(data.error||'HTTP '+r.status);events=(Array.isArray(data.events)?data.events:[]).map(e=>({...e,time:Number(e.time),confidence:Number(e.confidence)||0})).filter(e=>Number.isFinite(e.time)).sort((a,b)=>a.time-b.time);bar.style.width='100%';status.textContent=events.length?'✅ IA concluiu. Confirma os momentos que queres.':'ℹ️ A IA não encontrou eventos com confiança suficiente.';render();
+ }catch(e){bar.style.width='0%';status.textContent='❌ Erro na análise: '+e.message;}finally{try{player.currentTime=oldTime;}catch{}btn.disabled=false;}
+}
+btn.onclick=analyze;
+window.addEventListener('fhms-ai-confirm',ev=>{const e=ev.detail||{},map={goal_home:'Golo nosso',goal_away:'Golo adversário',save:'Defesa',chance:'Oportunidade',highlight:'Destaque'},kind=map[e.type]||'Destaque';if(typeof marks!=='undefined'&&Array.isArray(marks)){const t=Number(e.time);marks.push({kind,time:+t.toFixed(2),video:typeof current!=='undefined'?current:0,scorer:'',assist:'',ai:true,semantic:true});marks.sort((a,b)=>a.video-b.video||a.time-b.time);if(typeof refresh==='function')refresh();}});
 })();
 </script>
 <div style="text-align:center;color:#71839a;font-size:10px;padding:10px 0 18px">Football Highlights Maduro Studio · VERSÃO ESTÁVEL · IA de Highlights</div>
