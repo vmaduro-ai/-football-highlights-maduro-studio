@@ -386,46 +386,58 @@ refresh();
 <p style="font-size:11px;color:#666;line-height:1.4;border-left:3px solid #43e58a;padding-left:8px">O vídeo inteiro não é enviado. Procuramos localmente picos de ação e enviamos apenas imagens dos momentos candidatos para a IA.</p>
 </section>
 <script>
-(()=>{
-const $=id=>document.getElementById(id);
-const backend=$('aiBackendUrl'), pre=$('aiPre'), post=$('aiPost'), status=$('aiStatus'), bar=$('aiBar'), list=$('aiCandidates'), btn=$('aiAnalyze');
-const KEY='fhms_ai_config';
-let events=[];
-function save(){localStorage.setItem(KEY,JSON.stringify({backend:backend.value.trim().replace(/\/$/,''),pre:Number(pre.value)||8,post:Number(post.value)||8}));}
-try{const c=JSON.parse(localStorage.getItem(KEY)||'{}');backend.value=c.backend||'https://maduro-studio-ai.onrender.com';pre.value=c.pre??8;post.value=c.post??8;}catch{backend.value='https://maduro-studio-ai.onrender.com';}
-$('aiSave').onclick=()=>{save();status.textContent='✓ Configuração guardada.';};
-$('aiClear').onclick=()=>{events=[];list.innerHTML='';bar.style.width='0%';status.textContent='Candidatos limpos.';};
-$('aiTest').onclick=async()=>{const u=backend.value.trim().replace(/\/$/,'');if(!u){status.textContent='⚠️ Introduz o URL do backend.';return;}status.textContent='🔌 A testar ligação…';try{const r=await fetch(u+'/');const j=await r.json();if(!r.ok)throw Error(j.error||'HTTP '+r.status);status.textContent='✅ Backend online: '+(j.service||'Football Highlights Maduro Studio AI')+' · '+(j.model||'modelo configurado');}catch(e){status.textContent='❌ Falha na ligação: '+e.message;}};
-function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
-function seek(v,t){return new Promise((resolve,reject)=>{const target=Math.max(0,Math.min(t,Math.max(0,(v.duration||t)-0.05)));if(Math.abs((v.currentTime||0)-target)<0.05){resolve();return;}let done=false;const clean=()=>{v.removeEventListener('seeked',ok);v.removeEventListener('error',bad);};const ok=()=>{if(done)return;done=true;clean();resolve();};const bad=()=>{if(done)return;done=true;clean();reject(Error('Não foi possível procurar no vídeo.'));};v.addEventListener('seeked',ok,{once:true});v.addEventListener('error',bad,{once:true});try{v.currentTime=target;}catch(e){bad();}});}
-function label(t){return ({goal_home:'⚽ Golo nosso',goal_away:'🔴 Golo adversário',save:'🧤 Defesa',chance:'🎯 Oportunidade',highlight:'⭐ Destaque'})[t]||'⭐ Destaque';}
-function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);}
-function render(){if(!events.length){list.innerHTML='<span style="color:#666">A IA não encontrou momentos com confiança suficiente.</span>';return;}list.innerHTML=events.map((e,i)=>{const pct=Math.round(Math.max(0,Math.min(1,Number(e.confidence)||0))*100);return `<div style="padding:12px;border:1px solid #ddd;border-radius:12px;background:#fafafa;display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap"><div><b>${label(e.type)}</b> · ${Number(e.time).toFixed(1)}s · ${pct}%<div style="font-size:13px;color:#666;margin-top:3px">${esc(e.reason)}</div></div><div><button data-ok="${i}">✅ Confirmar</button> <button data-no="${i}">✕ Ignorar</button></div></div>`}).join('');list.querySelectorAll('[data-ok]').forEach(b=>b.onclick=()=>{const e=events[+b.dataset.ok];window.dispatchEvent(new CustomEvent('fhms-ai-confirm',{detail:e}));b.disabled=true;b.closest('[data-ok]')?.removeAttribute('data-ok');b.textContent='✓ Confirmado';status.textContent='✓ Momento confirmado: '+label(e.type);});list.querySelectorAll('[data-no]').forEach(b=>b.onclick=()=>b.closest('div[style*="padding:12px"]')?.remove());}
-async function analyze(){
- const player=$('player');
- if(!player || !player.src){status.textContent='⚠️ Primeiro carrega e seleciona um vídeo no separador “Vídeos”.';return;}
- const u=backend.value.trim().replace(/\/$/,''); if(!u){status.textContent='⚠️ Introduz o URL do backend.';return;}
- save(); btn.disabled=true; events=[]; list.innerHTML=''; bar.style.width='1%';
- const oldTime=player.currentTime||0;
- try{
-  if(player.readyState<1){await new Promise((res,rej)=>{const ok=()=>{clean();res();},bad=()=>{clean();rej(Error('O vídeo não ficou disponível.'));},clean=()=>{player.removeEventListener('loadedmetadata',ok);player.removeEventListener('error',bad)};player.addEventListener('loadedmetadata',ok,{once:true});player.addEventListener('error',bad,{once:true});});}
-  if(!isFinite(player.duration)||player.duration<=0)throw Error('Duração do vídeo indisponível.');
-  const canvas=document.createElement('canvas');canvas.width=160;canvas.height=90;const ctx=canvas.getContext('2d',{willReadFrequently:true});
-  const step=player.duration>900?4:player.duration>300?2.5:1.5;const samples=[];let prev=null;
-  status.textContent='🔎 A procurar momentos de ação…';
-  for(let t=0;t<player.duration;t+=step){await seek(player,t);ctx.drawImage(player,0,0,160,90);const d=ctx.getImageData(0,0,160,90).data;let m=0;if(prev){let diff=0;for(let p=0;p<d.length;p+=16)diff+=Math.abs(d[p]-prev[p])+Math.abs(d[p+1]-prev[p+1])+Math.abs(d[p+2]-prev[p+2]);m=diff/(d.length/16*3*255);}prev=d;samples.push({t,m});bar.style.width=Math.round(t/player.duration*45)+'%';await sleep(0);}
-  const vals=samples.map(x=>x.m), sorted=[...vals].sort((a,b)=>a-b), threshold=Math.max(sorted[Math.floor(sorted.length*.78)]||.07,.07), peaks=[];
-  for(let i=1;i<samples.length-1;i++)if(samples[i].m>=threshold&&samples[i].m>=samples[i-1].m&&samples[i].m>=samples[i+1].m)peaks.push(samples[i]);
-  peaks.sort((a,b)=>b.m-a.m);const chosen=[];for(const p of peaks)if(chosen.every(x=>Math.abs(x.t-p.t)>8)){chosen.push(p);if(chosen.length>=6)break;}chosen.sort((a,b)=>a.t-b.t);
-  if(!chosen.length){bar.style.width='100%';status.textContent='ℹ️ Não encontrei picos de ação suficientes.';return;}
-  status.textContent=`🧠 A IA está a analisar ${chosen.length} momentos…`;const frames=[];canvas.width=480;canvas.height=270;
-  for(let i=0;i<chosen.length;i++){const t=chosen[i].t;for(const tt of [Math.max(0,t-1.2),t,Math.min(player.duration-.05,t+1.2)]){await seek(player,tt);ctx.drawImage(player,0,0,480,270);frames.push({time:+tt.toFixed(2),image:canvas.toDataURL('image/jpeg',.72)});}bar.style.width=(50+Math.round((i+1)/chosen.length*30))+'%';}
-  const r=await fetch(u+'/analyze',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({frames:frames.slice(0,18),context:{home:$('home')?.value||'',away:$('away')?.value||'',video:(typeof videos!=='undefined'&&videos[current])?videos[current].name:'Vídeo',duration:player.duration}})});
-  const data=await r.json();if(!r.ok)throw Error(data.error||'HTTP '+r.status);events=(Array.isArray(data.events)?data.events:[]).map(e=>({...e,time:Number(e.time),confidence:Number(e.confidence)||0})).filter(e=>Number.isFinite(e.time)).sort((a,b)=>a.time-b.time);bar.style.width='100%';status.textContent=events.length?'✅ IA concluiu. Confirma os momentos que queres.':'ℹ️ A IA não encontrou eventos com confiança suficiente.';render();
- }catch(e){bar.style.width='0%';status.textContent='❌ Erro na análise: '+e.message;}finally{try{player.currentTime=oldTime;}catch{}btn.disabled=false;}
-}
-btn.onclick=analyze;
-window.addEventListener('fhms-ai-confirm',ev=>{const e=ev.detail||{},map={goal_home:'Golo nosso',goal_away:'Golo adversário',save:'Defesa',chance:'Oportunidade',highlight:'Destaque'},kind=map[e.type]||'Destaque';if(typeof marks!=='undefined'&&Array.isArray(marks)){const t=Number(e.time);marks.push({kind,time:+t.toFixed(2),video:typeof current!=='undefined'?current:0,scorer:'',assist:'',ai:true,semantic:true});marks.sort((a,b)=>a.video-b.video||a.time-b.time);if(typeof refresh==='function')refresh();}});
+// IA ESTÁVEL — ligação robusta ao vídeo selecionado
+(function(){
+  function initAI(){
+    const $=id=>document.getElementById(id);
+    const btn=$('aiAnalyze'), test=$('aiTest'), saveBtn=$('aiSave'), clearBtn=$('aiClear');
+    const backend=$('aiBackendUrl'), pre=$('aiPre'), post=$('aiPost'), status=$('aiStatus'), bar=$('aiBar'), list=$('aiCandidates');
+    if(!btn||!backend||!status||!bar||!list) return;
+    const KEY='fhms_ai_config_v2';
+    let events=[];
+    const getVideos=()=>Array.isArray(window.videos)?window.videos:[];
+    const getCurrent=()=>Number.isInteger(window.current)?window.current:0;
+    function save(){try{localStorage.setItem(KEY,JSON.stringify({backend:backend.value.trim().replace(/\/$/,''),pre:Number(pre.value)||8,post:Number(post.value)||8}));}catch(e){}}
+    try{const c=JSON.parse(localStorage.getItem(KEY)||'{}');backend.value=c.backend||backend.value||'https://maduro-studio-ai.onrender.com';pre.value=c.pre??8;post.value=c.post??8;}catch(e){backend.value=backend.value||'https://maduro-studio-ai.onrender.com';}
+    saveBtn.onclick=()=>{save();status.textContent='✓ Configuração guardada.';};
+    clearBtn.onclick=()=>{events=[];list.innerHTML='';bar.style.width='0%';status.textContent='Candidatos limpos.';};
+    test.onclick=async()=>{const u=backend.value.trim().replace(/\/$/,'');if(!u){status.textContent='⚠️ Introduz o URL do backend.';return;}status.textContent='🔌 A testar ligação…';try{const r=await fetch(u+'/',{cache:'no-store'});const j=await r.json();if(!r.ok)throw Error(j.error||'HTTP '+r.status);status.textContent='✅ Backend online: '+(j.service||'Football Highlights Maduro Studio AI')+' · '+(j.model||'modelo configurado');}catch(e){status.textContent='❌ Falha na ligação: '+(e.message||e);}};
+    function wait(ms){return new Promise(r=>setTimeout(r,ms));}
+    function seek(v,t){return new Promise((resolve,reject)=>{const target=Math.max(0,Math.min(t,(v.duration||t)-0.05));if(Math.abs((v.currentTime||0)-target)<0.08){resolve();return;}let done=false;const clean=()=>{v.removeEventListener('seeked',ok);v.removeEventListener('error',bad);clearTimeout(timer)};const ok=()=>{if(done)return;done=true;clean();resolve()};const bad=()=>{if(done)return;done=true;clean();reject(new Error('Não foi possível procurar no vídeo.'))};const timer=setTimeout(()=>{if(done)return;done=true;clean();reject(new Error('O iPhone demorou demasiado a procurar no vídeo.'))},8000);v.addEventListener('seeked',ok,{once:true});v.addEventListener('error',bad,{once:true});try{v.currentTime=target}catch(e){bad()}});}
+    function label(t){return ({goal_home:'⚽ Golo nosso',goal_away:'🔴 Golo adversário',save:'🧤 Defesa',chance:'🎯 Oportunidade',highlight:'⭐ Destaque'})[t]||'⭐ Destaque';}
+    function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);}
+    function render(){if(!events.length){list.innerHTML='<span style="color:#666">A IA não encontrou momentos com confiança suficiente.</span>';return;}list.innerHTML=events.map((e,i)=>{const pct=Math.round(Math.max(0,Math.min(1,Number(e.confidence)||0))*100);return '<div style="padding:12px;border:1px solid #ddd;border-radius:12px;background:#fafafa"><b>'+label(e.type)+'</b> · '+Number(e.time).toFixed(1)+'s · '+pct+'%<div style="font-size:13px;color:#666;margin:5px 0">'+esc(e.reason)+'</div><button data-ok="'+i+'">✅ Confirmar</button> <button data-no="'+i+'">✕ Ignorar</button></div>'}).join('');list.querySelectorAll('[data-ok]').forEach(b=>b.onclick=()=>{const e=events[+b.dataset.ok];window.dispatchEvent(new CustomEvent('fhms-ai-confirm',{detail:e}));b.disabled=true;b.textContent='✓ Confirmado';});list.querySelectorAll('[data-no]').forEach(b=>b.onclick=()=>b.parentElement.remove());}
+    async function analyze(){
+      if(btn.disabled)return;
+      const player=$('player'), vids=getVideos(), idx=getCurrent();
+      // Garante que a IA tem sempre o vídeo atualmente selecionado.
+      if(player && !player.src && vids[idx] && vids[idx].url) player.src=vids[idx].url;
+      if(!player || !player.src){status.textContent='⚠️ Seleciona primeiro um vídeo no separador “Vídeos”.';return;}
+      const u=backend.value.trim().replace(/\/$/,'');if(!u){status.textContent='⚠️ Introduz o URL do backend.';return;}
+      btn.disabled=true;events=[];list.innerHTML='';bar.style.width='2%';save();
+      const oldTime=Number(player.currentTime)||0;
+      try{
+        if(player.readyState<1){status.textContent='⏳ A preparar o vídeo…';await new Promise((res,rej)=>{const ok=()=>{clean();res()};const bad=()=>{clean();rej(new Error('O vídeo não ficou disponível.'))};const clean=()=>{player.removeEventListener('loadedmetadata',ok);player.removeEventListener('error',bad)};player.addEventListener('loadedmetadata',ok,{once:true});player.addEventListener('error',bad,{once:true});});}
+        const duration=Number(player.duration);if(!Number.isFinite(duration)||duration<=0)throw new Error('Duração do vídeo indisponível.');
+        const c=document.createElement('canvas'),ctx=c.getContext('2d',{willReadFrequently:true});c.width=160;c.height=90;
+        const step=duration>900?6:duration>300?3:2;const samples=[];let prev=null;
+        status.textContent='🔎 A procurar momentos de ação…';
+        for(let t=0;t<duration;t+=step){await seek(player,t);ctx.drawImage(player,0,0,c.width,c.height);const d=ctx.getImageData(0,0,c.width,c.height).data;let diff=0;if(prev){for(let p=0;p<d.length;p+=24)diff+=Math.abs(d[p]-prev[p])+Math.abs(d[p+1]-prev[p+1])+Math.abs(d[p+2]-prev[p+2]);diff/=Math.max(1,(d.length/24)*3*255)}prev=d;samples.push({t,m:diff});bar.style.width=Math.min(45,Math.round(t/duration*45))+'%';await wait(0)}
+        const sorted=samples.map(x=>x.m).sort((a,b)=>a-b), threshold=Math.max(sorted[Math.floor(sorted.length*.75)]||.05,.05), peaks=[];
+        for(let i=1;i<samples.length-1;i++)if(samples[i].m>=threshold&&samples[i].m>=samples[i-1].m&&samples[i].m>=samples[i+1].m)peaks.push(samples[i]);
+        peaks.sort((a,b)=>b.m-a.m);const chosen=[];for(const p of peaks){if(chosen.every(x=>Math.abs(x.t-p.t)>10)){chosen.push(p);if(chosen.length>=6)break;}}
+        if(!chosen.length)throw new Error('Não encontrei picos de ação suficientes no vídeo.');
+        chosen.sort((a,b)=>a.t-b.t);status.textContent='🧠 A IA está a analisar '+chosen.length+' momentos…';c.width=480;c.height=270;const frames=[];
+        for(let i=0;i<chosen.length;i++){const t=chosen[i].t;for(const tt of [Math.max(0,t-1.2),t,Math.min(duration-.05,t+1.2)]){await seek(player,tt);ctx.drawImage(player,0,0,480,270);frames.push({time:+tt.toFixed(2),image:c.toDataURL('image/jpeg',.72)})}bar.style.width=(50+Math.round((i+1)/chosen.length*30))+'%'}
+        const r=await fetch(u+'/analyze',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({frames:frames.slice(0,18),context:{home:$('home')?.value||'',away:$('away')?.value||'',video:vids[idx]?.name||'Vídeo',duration}})});
+        const data=await r.json();if(!r.ok)throw new Error(data.error||'HTTP '+r.status);events=(Array.isArray(data.events)?data.events:[]).map(e=>({...e,time:Number(e.time),confidence:Number(e.confidence)||0})).filter(e=>Number.isFinite(e.time)).sort((a,b)=>a.time-b.time);bar.style.width='100%';status.textContent=events.length?'✅ IA concluiu. Confirma os momentos que queres.':'ℹ️ A IA não encontrou eventos com confiança suficiente.';render();
+      }catch(e){bar.style.width='0%';status.textContent='❌ '+(e.message||'Erro na análise.');}finally{try{player.currentTime=oldTime}catch(e){}btn.disabled=false;}
+    }
+    btn.onclick=analyze;
+    window.addEventListener('fhms-ai-confirm',ev=>{const e=ev.detail||{},map={goal_home:'Golo nosso',goal_away:'Golo adversário',save:'Defesa',chance:'Oportunidade',highlight:'Destaque'},kind=map[e.type]||'Destaque';if(Array.isArray(window.marks)){window.marks.push({kind,time:+Number(e.time).toFixed(2),video:getCurrent(),scorer:'',assist:'',ai:true,semantic:true});window.marks.sort((a,b)=>a.video-b.video||a.time-b.time);if(typeof window.refresh==='function')window.refresh();}});
+    window.FHMS_AI_READY=true;
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',initAI,{once:true});else initAI();
 })();
 </script>
 <div style="text-align:center;color:#71839a;font-size:10px;padding:10px 0 18px">Football Highlights Maduro Studio · VERSÃO ESTÁVEL · IA de Highlights</div>
