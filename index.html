@@ -8,7 +8,7 @@
 <style>
 :root{--bg:#07111f;--panel:#101c2e;--panel2:#0b1626;--line:#253750;--text:#f7f9fc;--muted:#9eacc0;--green:#43e58a;--red:#f05252}
 *{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 80% 0,#183052 0,#07111f 42%);color:var(--text);font:15px system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}header{position:sticky;top:0;z-index:20;background:#07111feF;backdrop-filter:blur(14px);border-bottom:1px solid var(--line);padding:14px 18px}header h1{margin:0;font-size:20px}header small{color:var(--muted)}main{max-width:1280px;margin:auto;padding:15px}.tabs{display:flex;gap:7px;overflow:auto;margin-bottom:14px}.tabs button{white-space:nowrap}.tab.active{background:var(--green);color:#04110a}button{border:0;border-radius:10px;background:#1c2c43;color:#fff;padding:10px 13px;font-weight:750;cursor:pointer}button:disabled{opacity:.45;cursor:not-allowed}.primary{background:var(--green);color:#04110a}.danger{background:var(--red)}.card{background:#101c2eeF;border:1px solid var(--line);border-radius:17px;padding:15px;margin-bottom:14px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.two{display:grid;grid-template-columns:1.25fr .75fr;gap:14px}label{display:block;color:var(--muted);font-size:12px;margin:9px 0 4px}input,select{width:100%;background:#081423;border:1px solid var(--line);color:#fff;border-radius:9px;padding:10px}input[type=color]{height:42px;padding:3px}.row{display:flex;gap:7px;flex-wrap:wrap}.muted{color:var(--muted);line-height:1.45}.videoBox{background:#000;border-radius:13px;overflow:hidden;position:relative}.videoBox video{display:block;width:100%;max-height:560px}.boardPreview{aspect-ratio:16/9;background:#000;position:relative;display:grid;place-items:center;border-radius:13px;overflow:hidden}.board{position:absolute;top:4%;left:50%;transform:translateX(-50%);padding:8px 15px;border-radius:8px;white-space:nowrap;font-weight:850;font-size:clamp(11px,1.8vw,18px)}.centerScore{font-size:clamp(38px,7vw,74px);font-weight:950}.events{display:grid;gap:7px;max-height:360px;overflow:auto}.event{background:#0a1525;border:1px solid var(--line);border-radius:9px;padding:9px;display:flex;justify-content:space-between;align-items:center;gap:8px}.tag{font-size:11px;background:#1c3450;border-radius:999px;padding:3px 7px}.stat{background:#0a1525;border-radius:9px;padding:10px;color:#c6d2e2}.progress{height:9px;background:#08111d;border-radius:99px;overflow:hidden;margin-top:9px}.bar{height:100%;width:0;background:var(--green);transition:width .1s}.log{background:#050b13;border-radius:10px;padding:9px;max-height:170px;overflow:auto;font:12px ui-monospace,monospace;white-space:pre-wrap}.hidden{display:none}.small{font-size:12px}.fileItem{padding:9px;background:#0a1525;border:1px solid var(--line);border-radius:9px;margin-top:6px;cursor:pointer}.fileItem.sel{outline:2px solid var(--green)}.note{border-left:3px solid var(--green);padding-left:10px}.warning{border-left:3px solid #f0b94d;padding-left:10px}@media(max-width:780px){.grid,.two{grid-template-columns:1fr}main{padding:9px}.card{padding:12px}.board{font-size:10px}}
-.logoMini{width:28px;height:28px;object-fit:contain;border-radius:50%;vertical-align:middle}.liveOverlay{position:absolute;left:8px;right:8px;bottom:8px;display:flex;gap:6px;flex-wrap:wrap;z-index:3;pointer-events:none}.liveOverlay button{pointer-events:auto;backdrop-filter:blur(8px);font-size:12px;padding:9px 10px;box-shadow:0 3px 14px #0008}.liveOverlay .g{background:#18b86a}.liveOverlay .a{background:#d94747}.liveOverlay .d{background:#315b8f}.liveOverlay .o{background:#7a5bb8}.liveOverlay .h{background:#b37b20}.liveScore{position:absolute;top:8px;left:50%;transform:translateX(-50%);z-index:3;background:#07111fcc;border:1px solid #ffffff33;border-radius:999px;padding:5px 10px;font-weight:900;font-size:13px;pointer-events:none;white-space:nowrap}.liveHint{font-size:11px;color:#b8c5d8;margin-top:6px}@media(max-width:780px){.liveOverlay button{flex:1 1 calc(50% - 6px);min-height:44px;font-size:12px}.liveScore{font-size:12px}.videoBox video{max-height:62vh}}@media(max-width:780px){button{padding:10px 11px}.videoBox video{max-height:70vh}}
+.logoMini{width:28px;height:28px;object-fit:contain;border-radius:50%;vertical-align:middle}.livePanel{margin-top:10px;background:#0b1728;border:1px solid var(--line);border-radius:15px;padding:11px}.livePanelHead{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:9px}.livePanelHelp{font-size:11px;color:#8fa0b7}.liveButtons{display:grid;grid-template-columns:1fr 1fr;gap:8px}.liveButtons button{min-height:48px;font-size:13px;box-shadow:0 2px 10px #0005}.liveButtons .g{background:#18b86a}.liveButtons .a{background:#d94747}.liveButtons .d{background:#315b8f}.liveButtons .o{background:#7a5bb8}.liveButtons .h{background:#b37b20}.liveWide{grid-column:1/-1}.liveScore{position:absolute;top:8px;left:50%;transform:translateX(-50%);z-index:3;background:#07111fcc;border:1px solid #ffffff33;border-radius:999px;padding:5px 10px;font-weight:900;font-size:13px;pointer-events:none;white-space:nowrap}.liveHint{font-size:11px;color:#b8c5d8;margin:8px 2px 0;line-height:1.35}@media(max-width:780px){.livePanel{padding:10px}.livePanelHead{align-items:flex-start;flex-direction:column;gap:3px}.liveButtons button{min-height:52px;font-size:12px}.liveScore{font-size:12px}.videoBox video{max-height:70vh}}
 </style>
 
 <style>
@@ -43,14 +43,25 @@
 <div class="card"><b>Vídeos do jogo</b><p class="muted">Seleciona vídeos da Fototeca/Galeria no telemóvel ou ficheiros do PC. O processamento é feito localmente no navegador.</p>
 <input id="files" type="file" accept="video/*" multiple>
 <div id="fileList"></div>
-<div class="videoBox" style="margin-top:10px"><video id="player" controls playsinline preload="metadata"></video><div id="liveScore" class="liveScore">0 — 0</div><div class="liveOverlay">
-<button class="g liveMark" data-kind="Golo nosso">⚽ GOLO NOSSO</button>
-<button class="a liveMark" data-kind="Golo adversário">🔴 GOLO ADVERSÁRIO</button>
-<button class="d liveMark" data-kind="Defesa">🧤 DEFESA</button>
-<button class="o liveMark" data-kind="Oportunidade">🎯 OPORTUNIDADE</button>
-<button class="h liveMark" data-kind="Destaque">⭐ DESTAQUE</button>
-</div></div>
-<div class="card" style="margin-top:10px"><b>⚡ Marcação ao vivo</b> <span id="liveClock" class="tag">00:00</span><p class="liveHint">Vê o vídeo e toca diretamente no botão sobre o vídeo no momento do lance. Não precisas de mudar de separador. Atalhos no PC: G = golo nosso · A = golo adversário · D = defesa · O = oportunidade · H = destaque.</p></div>
+<div class="videoBox" style="margin-top:10px">
+<video id="player" controls playsinline preload="metadata"></video>
+<div id="liveScore" class="liveScore">0 — 0</div>
+</div>
+
+<div class="livePanel">
+  <div class="livePanelHead">
+    <div><b>⚡ Marcação ao vivo</b> <span id="liveClock" class="tag">00:00</span></div>
+    <span class="livePanelHelp">Marca exatamente no momento do lance</span>
+  </div>
+  <div class="liveButtons">
+    <button class="g liveMark" data-kind="Golo nosso">⚽ GOLO NOSSO</button>
+    <button class="a liveMark" data-kind="Golo adversário">🔴 GOLO ADVERSÁRIO</button>
+    <button class="d liveMark" data-kind="Defesa">🧤 DEFESA</button>
+    <button class="o liveMark" data-kind="Oportunidade">🎯 OPORTUNIDADE</button>
+    <button class="h liveMark liveWide" data-kind="Destaque">⭐ DESTAQUE</button>
+  </div>
+  <div class="liveHint">O vídeo fica totalmente livre. No PC podes usar G = nosso · A = adversário · D = defesa · O = oportunidade · H = destaque.</div>
+</div>
 <div class="row" style="margin-top:8px"><button id="prev">◀ Anterior</button><button id="next">Seguinte ▶</button></div>
 </div>
 </section>
@@ -316,4 +327,4 @@ refresh();
 </script>
 <script>
 if ('serviceWorker' in navigator) window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js'));
-</script></body></html>
+</script><div style="text-align:center;color:#71839a;font-size:10px;padding:10px 0 18px">Football Highlights Maduro Studio · V8 · Marcação fora do vídeo</div></body></html>
