@@ -515,8 +515,8 @@ function projectData(){
   render:{pre:$('pre').value,post:$('post').value,intro:$('intro').value,outro:$('outro').value,ratio:$('ratio').value,quality:$('quality').value},logos
  };
 }
-$('saveProject').onclick=()=>{localStorage.setItem('fhms-project',JSON.stringify(projectData()));$('status').textContent='Projeto guardado neste dispositivo.';alert('Projeto guardado neste navegador.')};
-$('loadProject').onclick=()=>{
+const saveProjectEl=$('saveProject'); if(saveProjectEl) saveProjectEl.onclick=()=>{localStorage.setItem('fhms-project',JSON.stringify(projectData()));$('status').textContent='Projeto guardado neste dispositivo.';alert('Projeto guardado neste navegador.')};
+const loadProjectEl=$('loadProject'); if(loadProjectEl) loadProjectEl.onclick=()=>{
  const raw=localStorage.getItem('fhms-project');if(!raw)return alert('Não existe projeto guardado.');
  try{const p=JSON.parse(raw);['home','away','competition','date','matchType'].forEach(k=>{if(p[k]!=null)$(k).value=p[k]});
   score=p.score||[0,0];marks=p.marks||[];logos=p.logos||{home:null,away:null};
@@ -525,7 +525,7 @@ $('loadProject').onclick=()=>{
   refresh();alert('Projeto recuperado. Seleciona novamente os vídeos da Fototeca/Galeria.');
  }catch(e){alert('Projeto inválido.')}
 };
-$('resetProject').onclick=()=>{if(confirm('Criar um novo jogo? Os vídeos escolhidos e momentos atuais serão limpos.')){marks=[];score=[0,0];videos=[];current=0;logos={home:null,away:null};$('player').removeAttribute('src');refresh()}};
+const resetProjectEl=$('resetProject'); if(resetProjectEl) resetProjectEl.onclick=()=>{if(confirm('Criar um novo jogo? Os vídeos escolhidos e momentos atuais serão limpos.')){marks=[];score=[0,0];videos=[];current=0;logos={home:null,away:null};$('player').removeAttribute('src');refresh()}};
 
 refresh();
 </script>
