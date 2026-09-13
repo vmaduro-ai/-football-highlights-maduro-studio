@@ -1,12 +1,18 @@
 {
   "name": "Football Highlights Maduro Studio",
   "short_name": "Maduro Studio",
-  "start_url": "./index-v13.html",
+  "start_url": "./index.html",
+  "scope": "./",
   "display": "standalone",
   "background_color": "#07111f",
   "theme_color": "#07111f",
-  "lang": "pt-PT",
-  "description": "Editor de highlights de futebol no navegador.",
-  "scope": "./",
-  "orientation": "any"
+  "description": "Highlights profissionais de futebol — PC, iPhone e Android.",
+  "icons": [
+    {
+      "src": "./icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
 }
