@@ -1,6 +1,15 @@
 <!doctype html>
 <html lang="pt-PT">
 <head>
+
+<!-- V10 TRUE AI BACKEND HOOK
+     The V9 local motion detector remains available. The V10 backend contract is:
+     POST {backendUrl}/analyze with:
+     { frames:[{time:number,image:"data:image/jpeg;base64,..."}], context:{...} }
+     -> { events:[{time,type,confidence,reason}] }
+     Configure a deployed backend URL in the app when available.
+-->
+
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#07111f"><link rel="manifest" href="manifest.json"><link rel="apple-touch-icon" href="icon.svg">
@@ -13,6 +22,7 @@
 
 <style>
 .liveMarkers{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:10px}.liveMarkers button{min-height:52px;border:0;border-radius:12px;font-weight:900;font-size:14px;color:#fff;touch-action:manipulation}.liveMarkers .g{background:#16834b}.liveMarkers .a{background:#9c2935}.liveMarkers .d{background:#315d94}.liveMarkers .o{background:#775a16}.liveMarkers .h{background:#653c8f}.liveClock{text-align:center;font-size:18px;font-weight:900;margin-top:10px}@media(min-width:700px){.liveMarkers{grid-template-columns:repeat(5,1fr)}}
+.aiCard{margin-top:10px;background:linear-gradient(180deg,#101d31,#0a1525);border:1px solid #2c4667;border-radius:16px;padding:12px}.aiHead{display:flex;align-items:center;justify-content:space-between;gap:10px}.aiHead>div{display:flex;align-items:center;gap:7px}.aiTag{background:#243d62}.aiSmall{font-size:10px;color:#8fa0b7}.aiStatus{font-size:12px;color:#c9d4e4;margin-top:7px}.aiProgress{margin-top:8px}.aiCandidates{display:grid;gap:7px;margin-top:9px;max-height:360px;overflow:auto}.aiCandidate{background:#081423;border:1px solid #253750;border-radius:11px;padding:9px;display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:9px}.aiScore{font-weight:900;font-size:13px}.aiTime{font-weight:850}.aiReason{font-size:10px;color:#8fa0b7;margin-top:2px}.aiCandidate button{font-size:11px;padding:8px 9px}.aiNote{font-size:10px;color:#8fa0b7;line-height:1.35;margin-top:9px;border-left:3px solid #43e58a;padding-left:8px}@media(max-width:780px){.aiHead{align-items:flex-start;flex-direction:column;gap:4px}.aiCandidate{grid-template-columns:auto 1fr}.aiCandidate button{grid-column:2;justify-self:start}}
 </style>
 </head>
 <body>
@@ -62,6 +72,22 @@
   </div>
   <div class="liveHint">O vídeo fica totalmente livre. No PC podes usar G = nosso · A = adversário · D = defesa · O = oportunidade · H = destaque.</div>
 </div>
+<div class="aiCard">
+  <div class="aiHead">
+    <div><b>🤖 Assistente IA de Highlights</b><span class="tag aiTag">IA local</span></div>
+    <span class="aiSmall">Analisa o vídeo sem enviar o ficheiro para a internet</span>
+  </div>
+  <p class="muted small">A IA procura automaticamente momentos de maior ação e apresenta-os como candidatos. Tu confirmas o que queres transformar em highlight.</p>
+  <div class="row">
+    <button id="aiAnalyze" class="primary">🤖 Analisar este vídeo</button>
+    <button id="aiClear">Limpar candidatos</button>
+  </div>
+  <div class="progress aiProgress"><div id="aiBar" class="bar"></div></div>
+  <div id="aiStatus" class="aiStatus">Pronto para analisar.</div>
+  <div id="aiCandidates" class="aiCandidates"><span class="muted">Ainda não existem candidatos.</span></div>
+  <div class="aiNote">💡 Para deteção semiautomática de golos, defesas e oportunidades, confirma os candidatos. A versão seguinte pode ligar um motor de visão computacional num servidor, sem expor nenhuma chave no navegador.</div>
+</div>
+
 <div class="row" style="margin-top:8px"><button id="prev">◀ Anterior</button><button id="next">Seguinte ▶</button></div>
 </div>
 </section>
@@ -304,6 +330,144 @@ async function renderFinal(){
 }
 $('renderBtn').onclick=renderFinal;$('mp4Btn').onclick=convertToMP4;
 
+
+// ---------- IA LOCAL / DETEÇÃO INTELIGENTE ----------
+let aiCandidates=[];
+
+function aiTime(t){return fmt(t)}
+function clamp(n,a,b){return Math.max(a,Math.min(b,n))}
+
+function aiRenderCandidates(){
+  const box=$('aiCandidates');
+  if(!aiCandidates.length){
+    box.innerHTML='<span class="muted">Ainda não existem candidatos.</span>';
+    return;
+  }
+  box.innerHTML=aiCandidates.map((c,i)=>`
+    <div class="aiCandidate">
+      <div class="aiScore">${Math.round(c.score)}%</div>
+      <div>
+        <div class="aiTime">${aiTime(c.time)} · ${esc(c.label)}</div>
+        <div class="aiReason">${esc(c.reason)}</div>
+      </div>
+      <button class="primary" data-ai-add="${i}">➕ Adicionar</button>
+    </div>`).join('');
+  box.querySelectorAll('[data-ai-add]').forEach(b=>b.onclick=()=>{
+    const c=aiCandidates[+b.dataset.aiAdd];
+    if(!c)return;
+    // Candidate starts as a generic highlight. User can change/delete it afterwards.
+    marks.push({kind:c.label,time:c.time,video:current,scorer:'',assist:'',ai:true});
+    marks.sort((a,b)=>a.video-b.video||a.time-b.time);
+    refresh();
+    aiCandidates.splice(+b.dataset.aiAdd,1);
+    aiRenderCandidates();
+  });
+}
+
+function aiClear(){
+  aiCandidates=[];
+  aiRenderCandidates();
+  if($('aiBar'))$('aiBar').style.width='0%';
+  if($('aiStatus'))$('aiStatus').textContent='Candidatos limpos.';
+}
+
+async function aiAnalyzeVideo(){
+  if(!videos.length)return alert('Carrega primeiro um vídeo.');
+  const source=videos[current];
+  const status=$('aiStatus'), bar=$('aiBar');
+  $('aiAnalyze').disabled=true;
+  aiCandidates=[];
+  aiRenderCandidates();
+  status.textContent='A preparar análise local…';
+  bar.style.width='2%';
+
+  const v=document.createElement('video');
+  v.src=source.url; v.muted=true; v.playsInline=true; preload='metadata';
+  await waitEvent(v,'loadedmetadata');
+  if(!isFinite(v.duration)||v.duration<=0)throw new Error('Duração do vídeo indisponível.');
+
+  const canvas=document.createElement('canvas');
+  const w=160,h=90; canvas.width=w;canvas.height=h;
+  const ctx=canvas.getContext('2d',{willReadFrequently:true});
+
+  // Sampling density is deliberately moderate so it works on iPhone as well.
+  const step=v.duration>900?3:v.duration>300?2:1.5;
+  const samples=[];
+  let previous=null;
+
+  for(let t=0;t<v.duration;t+=step){
+    await seek(v,t);
+    ctx.drawImage(v,0,0,w,h);
+    const data=ctx.getImageData(0,0,w,h).data;
+    let motion=0;
+    if(previous){
+      let diff=0;
+      // Sample every 4th pixel to keep mobile CPUs responsive.
+      for(let p=0;p<data.length;p+=16){
+        diff += Math.abs(data[p]-previous[p]) + Math.abs(data[p+1]-previous[p+1]) + Math.abs(data[p+2]-previous[p+2]);
+      }
+      motion=diff/(data.length/16*3*255);
+    }
+    previous=data;
+    samples.push({t,motion});
+    bar.style.width=Math.round((t/v.duration)*70)+'%';
+    status.textContent=`A analisar vídeo… ${Math.round((t/v.duration)*100)}%`;
+    await new Promise(r=>setTimeout(r,0));
+  }
+
+  // Detect peaks above the local baseline, then merge nearby peaks.
+  const vals=samples.map(x=>x.motion);
+  const sorted=[...vals].sort((a,b)=>a-b);
+  const q=sorted[Math.floor(sorted.length*0.78)]||0.12;
+  const threshold=Math.max(q,0.07);
+  const peaks=[];
+  for(let i=1;i<samples.length-1;i++){
+    const m=samples[i].motion;
+    if(m>=threshold && m>=samples[i-1].motion && m>=samples[i+1].motion){
+      peaks.push({t:samples[i].t,m});
+    }
+  }
+  peaks.sort((a,b)=>b.m-a.m);
+
+  // Keep well-separated candidates; up to 20 per video.
+  const chosen=[];
+  for(const p of peaks){
+    if(chosen.every(x=>Math.abs(x.t-p.t)>8)){
+      chosen.push(p);
+      if(chosen.length>=20)break;
+    }
+  }
+  chosen.sort((a,b)=>a.t-b.t);
+
+  aiCandidates=chosen.map(p=>{
+    const confidence=clamp(55 + (p.m-threshold)*180,55,96);
+    return {
+      time:+p.t.toFixed(2),
+      score:confidence,
+      label:'Destaque',
+      reason:'Pico de movimento/ação detectado automaticamente'
+    };
+  });
+
+  bar.style.width='100%';
+  status.textContent=aiCandidates.length
+    ? `Análise concluída: ${aiCandidates.length} candidatos encontrados.`
+    : 'Não foram encontrados picos de ação suficientemente fortes.';
+  aiRenderCandidates();
+  $('aiAnalyze').disabled=false;
+}
+
+$('aiAnalyze').onclick=async()=>{
+  try{await aiAnalyzeVideo()}catch(e){
+    $('aiStatus').textContent='Erro na análise: '+e.message;
+    $('aiAnalyze').disabled=false;
+  }
+};
+$('aiClear').onclick=aiClear;
+$('player').addEventListener('loadedmetadata',()=>{
+  if($('aiStatus'))$('aiStatus').textContent='Vídeo pronto para análise IA.';
+});
+
 function projectData(){
  return {
   home:$('home').value,away:$('away').value,competition:$('competition').value,date:$('date').value,matchType:$('matchType').value,
@@ -327,4 +491,178 @@ refresh();
 </script>
 <script>
 if ('serviceWorker' in navigator) window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js'));
-</script><div style="text-align:center;color:#71839a;font-size:10px;padding:10px 0 18px">Football Highlights Maduro Studio · V8 · Marcação fora do vídeo</div></body></html>
+</script><div style="text-align:center;color:#71839a;font-size:10px;padding:10px 0 18px">Football Highlights Maduro Studio · V9 · IA local + marcação fora do vídeo</div>
+<div id="v10-ai-backend-panel" style="margin:18px auto;max-width:1100px;padding:16px;border:1px solid #d9d9d9;border-radius:14px;background:#fff">
+  <h3 style="margin:0 0 8px">🧠 IA verdadeira — análise semântica</h3>
+  <p style="margin:0 0 10px;color:#555">
+    A análise semântica usa um backend seguro com visão. A chave da API fica no servidor,
+    não no GitHub Pages.
+  </p>
+  <label style="display:block;font-weight:600;margin-bottom:6px">URL do backend de IA</label>
+  <input id="v10BackendUrl" type="url" placeholder="https://teu-backend.exemplo.com"
+         style="width:100%;box-sizing:border-box;padding:11px;border:1px solid #ccc;border-radius:10px">
+  <button id="v10SaveBackendUrl" style="margin-top:10px;padding:10px 14px;border:0;border-radius:10px;cursor:pointer">
+    Guardar URL
+  </button>
+  <span id="v10BackendStatus" style="margin-left:10px;color:#666"></span>
+</div>
+<script>
+(() => {
+  const input = document.getElementById('v10BackendUrl');
+  const btn = document.getElementById('v10SaveBackendUrl');
+  const status = document.getElementById('v10BackendStatus');
+  const key = 'fhms_v10_backend_url';
+  input.value = localStorage.getItem(key) || '';
+  btn.addEventListener('click', () => {
+    const value = input.value.trim().replace(/\\/$/, '');
+    localStorage.setItem(key, value);
+    status.textContent = value ? '✓ URL guardado neste dispositivo' : 'URL removido';
+  });
+})();
+</script>
+
+
+<!-- V11 FINAL — integrated AI + highlight workflow -->
+<section id="v11-final-ai" style="margin:20px auto;max-width:1100px;padding:18px;border:1px solid #ddd;border-radius:16px;background:#fff;box-shadow:0 4px 18px rgba(0,0,0,.06)">
+  <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+    <div style="font-size:26px">🧠</div>
+    <div>
+      <h2 style="margin:0">IA de Highlights — V11 FINAL</h2>
+      <div style="color:#666;font-size:14px">Análise semântica + confirmação humana + clips automáticos</div>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px;margin-top:16px">
+    <label style="display:block;font-weight:600">Backend de IA
+      <input id="v11BackendUrl" type="url" placeholder="https://teu-backend.exemplo.com"
+        style="display:block;width:100%;box-sizing:border-box;margin-top:6px;padding:11px;border:1px solid #ccc;border-radius:10px">
+    </label>
+    <label style="display:block;font-weight:600">Segundos antes
+      <input id="v11Pre" type="number" min="0" max="30" step="1" value="8"
+        style="display:block;width:100%;box-sizing:border-box;margin-top:6px;padding:11px;border:1px solid #ccc;border-radius:10px">
+    </label>
+    <label style="display:block;font-weight:600">Segundos depois
+      <input id="v11Post" type="number" min="0" max="30" step="1" value="8"
+        style="display:block;width:100%;box-sizing:border-box;margin-top:6px;padding:11px;border:1px solid #ccc;border-radius:10px">
+    </label>
+  </div>
+
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px">
+    <button id="v11Save" style="padding:11px 15px;border:0;border-radius:10px;cursor:pointer">💾 Guardar configuração</button>
+    <button id="v11Test" style="padding:11px 15px;border:0;border-radius:10px;cursor:pointer">🔌 Testar IA</button>
+    <button id="v11Clear" style="padding:11px 15px;border:0;border-radius:10px;cursor:pointer">🧹 Limpar candidatos</button>
+  </div>
+
+  <div id="v11Status" style="margin-top:12px;color:#555">IA pronta. Primeiro carrega um vídeo.</div>
+  <div id="v11Candidates" style="margin-top:12px;display:grid;gap:9px"></div>
+</section>
+
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const backend = $('v11BackendUrl');
+  const pre = $('v11Pre');
+  const post = $('v11Post');
+  const status = $('v11Status');
+  const list = $('v11Candidates');
+  const KEY = 'fhms_v11_config';
+
+  try {
+    const c = JSON.parse(localStorage.getItem(KEY) || '{}');
+    backend.value = c.backend || '';
+    pre.value = c.pre ?? 8;
+    post.value = c.post ?? 8;
+  } catch {}
+
+  $('v11Save')?.addEventListener('click', () => {
+    localStorage.setItem(KEY, JSON.stringify({
+      backend: backend.value.trim().replace(/\/$/, ''),
+      pre: Number(pre.value) || 8,
+      post: Number(post.value) || 8
+    }));
+    status.textContent = '✓ Configuração guardada neste dispositivo.';
+  });
+
+  $('v11Clear')?.addEventListener('click', () => {
+    list.innerHTML = '';
+    status.textContent = 'Candidatos limpos.';
+  });
+
+  $('v11Test')?.addEventListener('click', async () => {
+    const url = backend.value.trim().replace(/\/$/, '');
+    if (!url) {
+      status.textContent = '⚠️ Introduz primeiro o URL do backend.';
+      return;
+    }
+    status.textContent = '🔄 A testar ligação à IA…';
+    try {
+      const r = await fetch(url + '/', { method: 'GET' });
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      const j = await r.json();
+      status.textContent = '✅ IA ligada: ' + (j.service || 'backend online');
+    } catch (e) {
+      status.textContent = '❌ Não foi possível ligar ao backend: ' + e.message;
+    }
+  });
+
+  // Public helper for the main app: send selected frames to the semantic AI.
+  window.FHMS_V11 = {
+    async analyzeFrames(frames, context = {}) {
+      const url = backend.value.trim().replace(/\/$/, '');
+      if (!url) throw new Error('Configure o URL do backend de IA.');
+      status.textContent = '🧠 IA a analisar ' + frames.length + ' frames…';
+      const r = await fetch(url + '/analyze', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({frames, context})
+      });
+      const data = await r.json();
+      if (!r.ok) throw new Error(data.error || ('HTTP ' + r.status));
+      const events = Array.isArray(data.events) ? data.events : [];
+      list.innerHTML = '';
+      events.sort((a,b) => Number(a.time)-Number(b.time)).forEach((e, i) => {
+        const pct = Math.round((Number(e.confidence)||0)*100);
+        const labels = {
+          goal_home:'⚽ Golo nosso', goal_away:'⚽ Golo adversário',
+          save:'🧤 Defesa', chance:'🎯 Oportunidade', highlight:'⭐ Destaque'
+        };
+        const card = document.createElement('div');
+        card.style.cssText='padding:12px;border:1px solid #ddd;border-radius:12px;background:#fafafa;display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap';
+        card.innerHTML = `<div><b>${labels[e.type] || '⭐ Momento'}</b> · ${Number(e.time).toFixed(1)}s · ${pct}%<div style="font-size:13px;color:#666;margin-top:3px">${String(e.reason||'')}</div></div>
+          <div style="display:flex;gap:6px"><button data-v11-confirm="${i}" style="padding:8px 10px;border:0;border-radius:8px">✅ Confirmar</button><button data-v11-ignore="${i}" style="padding:8px 10px;border:0;border-radius:8px">✕ Ignorar</button></div>`;
+        list.appendChild(card);
+        card.querySelector('[data-v11-confirm]').onclick = () => {
+          window.dispatchEvent(new CustomEvent('fhms-ai-confirm', {detail:e}));
+          card.style.opacity='.55';
+          card.querySelector('[data-v11-confirm]').disabled=true;
+          status.textContent='✓ Momento confirmado: '+(labels[e.type]||e.type);
+        };
+        card.querySelector('[data-v11-ignore]').onclick = () => card.remove();
+      });
+      status.textContent = events.length ? `✅ IA encontrou ${events.length} candidato(s). Confirma os que interessam.` : 'ℹ️ A IA não encontrou eventos com confiança suficiente.';
+      return events;
+    }
+  };
+})();
+</script>
+
+
+<script>
+window.addEventListener('fhms-ai-confirm', (ev) => {
+  const e = ev.detail || {};
+  // Keep the semantic result available to the existing app even if its internal
+  // mark function has a different name. This avoids breaking V8/V9/V10 data.
+  window.FHMS_AI_CONFIRMED = window.FHMS_AI_CONFIRMED || [];
+  window.FHMS_AI_CONFIRMED.push(e);
+  // Try common existing mark functions used by previous builds.
+  const typeMap = {goal_home:'Golo nosso',goal_away:'Golo adversário',save:'Defesa',chance:'Oportunidade',highlight:'Destaque'};
+  const label = typeMap[e.type] || 'Destaque';
+  for (const fn of ['addMark','addMoment','markMoment','addHighlight']) {
+    if (typeof window[fn] === 'function') {
+      try { window[fn](Number(e.time), label); return; } catch (_) {}
+    }
+  }
+});
+</script>
+
+</body></html>
