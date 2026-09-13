@@ -28,7 +28,7 @@
 </head>
 <body>
 <script>
-// Remove versões antigas do Service Worker. A aplicação usa sempre index.html atualizado.
+// V13 standalone: prevent an older GitHub Pages service worker from serving the old app.
 (async()=>{
   try {
     if ('serviceWorker' in navigator) {
@@ -88,6 +88,22 @@
   </div>
   <div class="liveHint">O vídeo fica totalmente livre. No PC podes usar G = nosso · A = adversário · D = defesa · O = oportunidade · H = destaque.</div>
 </div>
+<div class="aiCard">
+  <div class="aiHead">
+    <div><b>🤖 Assistente IA de Highlights</b><span class="tag aiTag">IA local</span></div>
+    <span class="aiSmall">Analisa o vídeo sem enviar o ficheiro para a internet</span>
+  </div>
+  <p class="muted small">A IA procura automaticamente momentos de maior ação e apresenta-os como candidatos. Tu confirmas o que queres transformar em highlight.</p>
+  <div class="row">
+    <button id="aiAnalyze" class="primary">🤖 Analisar este vídeo</button>
+    <button id="aiClear">Limpar candidatos</button>
+  </div>
+  <div class="progress aiProgress"><div id="aiBar" class="bar"></div></div>
+  <div id="aiStatus" class="aiStatus">Pronto para analisar.</div>
+  <div id="aiCandidates" class="aiCandidates"><span class="muted">Ainda não existem candidatos.</span></div>
+  <div class="aiNote">💡 Para deteção semiautomática de golos, defesas e oportunidades, confirma os candidatos. A versão seguinte pode ligar um motor de visão computacional num servidor, sem expor nenhuma chave no navegador.</div>
+</div>
+
 <div class="row" style="margin-top:8px"><button id="prev">◀ Anterior</button><button id="next">Seguinte ▶</button></div>
 </div>
 </section>
@@ -352,10 +368,9 @@ $('resetProject').onclick=()=>{if(confirm('Criar um novo jogo? Os vídeos escolh
 
 refresh();
 </script>
-<!-- IA AUTOMÁTICA — MÓDULO ÚNICO E ESTÁVEL -->
+<!-- IA AUTOMÁTICA ESTÁVEL — ÚNICO MÓDULO -->
 <section id="v13-ai" style="margin:20px auto;max-width:1100px;padding:18px;border:1px solid #ddd;border-radius:16px;background:#fff;color:#222">
 <h2 style="margin:0">🧠 IA de Highlights — AUTOMÁTICA</h2>
-<p style="font-weight:700;color:#333;margin:8px 0">Esta é a única versão da aplicação. Atualizações futuras entram diretamente aqui.</p>
 <p style="color:#666">Deteção local de ação → análise semântica por visão → confirmação → highlight</p>
 <div style="display:grid;grid-template-columns:1.5fr .5fr .5fr;gap:12px">
 <label>Backend de IA<input id="aiBackendUrl" type="url" placeholder="https://maduro-studio-ai.onrender.com" style="display:block;width:100%;box-sizing:border-box;margin-top:6px;padding:11px;border:1px solid #ccc;border-radius:10px"></label>
@@ -425,6 +440,14 @@ refresh();
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',initAI,{once:true});else initAI();
 })();
 </script>
-<div style="text-align:center;color:#71839a;font-size:10px;padding:10px 0 18px">Football Highlights Maduro Studio · APP ÚNICA · IA AUTOMÁTICA</div>
+<div style="text-align:center;color:#71839a;font-size:10px;padding:10px 0 18px">Football Highlights Maduro Studio · VERSÃO ESTÁVEL · IA de Highlights</div>
 
+<script>
+// Atualização automática da aplicação: a página estável é index.html.
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').catch(() => {});
+  });
+}
+</script>
 </body></html>
